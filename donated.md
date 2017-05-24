@@ -1,6 +1,7 @@
-Title: Thank you for donating!!
-URL: 
-save_as: donated/index.html
+---
+title: Thank you for donating!!
+permalink: /donated/
+---
 
 ```
       ________________________

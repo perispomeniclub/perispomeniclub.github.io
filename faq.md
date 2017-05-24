@@ -1,6 +1,7 @@
-Title: FAQ
-URL: 
-save_as: faq/index.html
+---
+title: FAQ
+permalink: /faq/
+---
 
 ```
      ________________________

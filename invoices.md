@@ -1,6 +1,7 @@
-Title: A list of invoices
-URL: 
-save_as: invoices/index.html
+---
+title: A list of invoices
+permalink: /invoices/
+---
 
 ## 2017
 
