@@ -1,0 +1,9 @@
+name: perispomeni.club
+url: http://perispomeni.club
+description: Welcome to perispomeni.club. A community that lives on a server
+
+permalink: /:year/:month/:day/:title/
+paginate: 10
+
+gems: [jekyll-paginate]
+exclude: ['README.md', 'Gemfile.lock', 'Gemfile', 'Rakefile']

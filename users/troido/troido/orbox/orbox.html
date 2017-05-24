@@ -1,0 +1,371 @@
+<html>
+	<head>
+		<!--meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+		<!--script src="jquery.js"></script-->
+		<script src="function grid.js"></script>
+		<script src="blocks.js"></script>
+		<script type="text/javascript">
+
+
+
+var width,height,levels,level,lvl,canScroll;
+{/*
+var blocks={
+	block:{
+		solid:true,
+		tx:3,
+	},
+	end:{
+		touch:function(){end();return 1},
+		tx:1,
+	},
+	cornerTL:{
+		touch:function(x,y,vx,vy){if (vy>0||vx>0){player.vy=-vx;player.vx=-vy;}else return 1;},
+		tx:6,
+	},
+	cornerTR:{
+		touch:function(x,y,vx,vy){if (vy>0||vx<0){player.vy=vx;player.vx=vy;}else return 1;},
+		tx:7,
+	},
+	cornerBR:{
+		touch:function(x,y,vx,vy){if (vy<0||vx<0){player.vy=-vx;player.vx=-vy;}else return 1;},
+		tx:4,
+	},
+	cornerBL:{
+		touch:function(x,y,vx,vy){if (vy<0||vx>0){player.vy=vx;player.vx=vy;}else return 1;},
+		tx:5,
+	},
+	stop:{
+		touch:function(){return 2},
+		tx:2,
+		ty:1,
+	},
+	clickerH:{tx:3,ty:1,
+		touch:function(x,y){
+			setNum(x+1,y,0);
+			setNum(x-1,y,0);
+			setNum(x,y,1);
+		}
+	},
+	clickerV:{tx:4,ty:1,
+		touch:function(x,y){
+			setNum(x,y+1,0);
+			setNum(x,y-1,0);
+			setNum(x,y,1);
+		}
+	},
+	teleC:{
+		touch:function(x,y,vx,vy,arg){
+			player.x=Number(arg[0])||0;
+			player.y=Number(arg[1])||0;
+			return 3;
+		},
+		tx:1,
+		ty:1
+	},
+	teleM:{
+		touch:function(x,y,vx,vy,arg){
+			player.x=Number(arg[0])||0;
+			player.y=Number(arg[1])||0;
+			return 3;
+		},
+		ty:1
+	},
+	
+}*/}
+
+
+start=function(lvl){
+	lvl=lvl%levels.length;
+	var a=levels[lvl];
+	level={}
+	for (x in a)
+		level[x]=a[x];
+	level.field=new Grid();
+	level.field.from2D(a.field);
+	width=level.field.width;
+	height=level.field.height;
+	player.x=level.x0||0;
+	player.y=level.y0||0;
+	player.start();
+	level.start&&level.start();
+	document.getElementById("description").innerHTML=level.description||"";
+	firstDraw();
+	draw();
+}
+
+
+var player={
+	x:0, y:0, vx:0, vy:0, isMoving:0,movement:0,field:(new Grid({})),
+	start:function(){
+		this.field.clear();
+		this.field.width=level.field.width;
+		this.field.height=level.field.height;
+		this.field.size=level.field.size;
+		this.field.fill(0);
+	},
+	move:function(xplus,yplus){
+		if ((xplus==0&&yplus==0)||this.isMoving) return 0;
+		this.isMoving=1;
+		this.vx=xplus//Math.abs(xplus);
+		this.vy=yplus//Math.abs(yplus);
+		this.movement=setInterval(function(player){player.step()},150,this);
+		this.step();
+	},
+	stop:function(){
+		clearInterval(this.movement);
+		this.isMoving=0;
+		draw();
+	},
+	step:function(){
+	
+		
+		var x=this.x+this.vx, y=this.y+this.vy,xp=this.x,yp=this.y;
+		if (x<0||y<0||x>=width||y>=height) {this.die(); return 0;}
+		if (getNum(x,y)) {
+			var a=getBlock(x,y),b=getArgs(x,y),c=a.touch&&a.touch(x,y,this.vx,this.vy,b);
+			if ((c==1)||a.solid){
+				this.stop();
+				//this.field.add(this.x,this.y,1);
+				return 0;
+			} else if (c==2){
+				this.stop();
+			} else if (c==3){
+				this.field.add(xp,yp,1);
+				draw();
+				return 0;
+			}
+		}
+		this.field.add(xp,yp,1);
+		this.x=x; this.y=y;
+		
+		draw();
+	},
+	die:function(){
+		this.stop();
+		start(lvl);
+		console.log("dead");
+		draw();
+	},
+	drawTrail:function(){
+		this.field.for(function(x,y,val){
+			if (val==1){
+				drawCell(x,y,5,1);
+			}else if (val>1){
+				drawCell(x,y,6,1);
+			}
+		});
+	},
+	draw:function(){
+		drawCell(this.x,this.y,0,0);
+	}
+}
+
+function getNum(x,y){return level.field.get(x,y);}
+function getBlock(x,y){return blocks[(level.indices[getNum(x,y)]||"").split(":")[0]]||0;}
+function getArgs(x,y){var a=level.indices[getNum(x,y)]||"";a=a.split(":");a.shift();return a;}
+function setNum(x,y,val){level.field.set(x,y,val);}
+
+function setLevels(str){
+	var a=JSON.parse(str);
+	if (!a) return 0;
+	levels=a.levels;
+	canScroll=a.canScroll;
+	return 1;
+}
+
+function draw(){
+	output.canvas.clear();
+	player.drawTrail();
+	level.field.for(function(x,y,n){
+		if (n){
+			var obj=getBlock(x,y);
+			obj&&drawCell(x,y,obj.tx||0,obj.ty||0);
+		}
+	})
+	player.draw();
+}
+
+function drawCell(x,y,sx,sy){
+	output.canvas.imgPart(x,y,sx,sy);
+}
+
+function firstDraw(){
+	output.canvas.setSize(width,height);
+	output.print.description(level.description||"");
+	output.print.showScroll(canScroll);
+}
+
+function end(){player.stop();alert("you made it =D");start(++lvl);};
+
+		</script>
+		
+		<script type="text/javascript">
+
+				/* Does not work offline: needs http mode to use ajax*/
+
+var canvas,ctx,scl;
+
+var input={
+  left:function(){player.move(-1,0);},
+  right:function(){player.move(1,0);},
+  up:function(){player.move(0,-1);},
+  down:function(){player.move(0,1);},
+  gameStart:function(){lvl=0;start(lvl);},
+  restart:function(){start(lvl);},
+  next:function(){start(++lvl);},
+  back:function(){start(--lvl);},
+  loadFile:function(str){if (str&&setLevels(str)) input.gameStart();}
+},
+load={
+  ext:function(url){
+	/*function loadFile(string){
+		//if (!succes){console.log("failed to load file"); return 0;}
+		//console.log(string);
+		//var obj=JSON.parse(string);
+		//console.log(obj);
+		if (!string) return 0;
+		setLevels(string);
+		//obj.blocks&&setBlocks(obj.blocks);
+		//obj.img&&obj.setTextures(obj.img);
+		//canScroll=obj.canScroll;
+		input.gameStart();
+	}
+	/*function setLevels(array){
+		levels=array;
+	}
+	function setBlocks(obj){
+		for (x in obj){
+			blocks[x]=obj[x];
+		}
+	}
+	function setTextures(url){
+		textures.src=url;
+	}*/
+	//var url=prompt("write, or copy the filename and path or url here","");
+	if (!url) return 0;
+	loadAJAX(url,input.loadFile);
+  },
+  mod:function(url){
+	function loadFile(string){
+		eval(string);
+	}
+	if (!url||!confirm("WARNING: a mod can change the whole game.\nAre you sure you want to load?")) return 0;
+	loadAJAX(url,loadFile);
+  },
+  textures:function(text,scale){
+	//var text=prompt('Enter the path or url of the image',textures.src);
+	if (!text) return 0;
+	textures.src=text;
+	scl=scale;//prompt('Enter the scale./nThis is the width of one block in the image (in pixels)',scl);
+	draw();
+  }
+},
+output={
+  canvas:{/*can:0,scl:0,ctx:0,textures:0,*/
+    imgPart:function(x,y,sx,sy){ctx.drawImage(textures,sx*scl,sy*scl,scl,scl,x*scl,y*scl,scl,scl);},
+    clear:function(){ctx.clearRect(0,0,canvas.width,canvas.height);},
+    setSize:function(w,h){canvas.width=w*scl;canvas.height=h*scl;}
+  },
+  print:{
+    description:function(string){
+      document.getElementById("description").innerHTML=string;
+    },
+    showScroll:function(show){
+      document.getElementById("scroll").style.display=show ? "inline" : "none";
+    }
+  }
+};
+
+
+function loadAJAX(url,ready){
+	var xmlhttp=new XMLHttpRequest();
+	xmlhttp.onload=function(){
+		ready(xmlhttp.responseText);
+	}
+	xmlhttp.open("GET",url,true);
+	xmlhttp.send();
+}
+
+onload=function(){
+	scl=20;
+	canvas=document.getElementById("canvas");
+	ctx=canvas.getContext("2d");
+	
+	levels=load.ext("SPack.json");
+}
+
+onkeydown=function(e){
+	switch (e.which){
+	  case 38:
+	  case 87:
+	    input.up();
+	    break;
+	  case 40:
+	  case 83:
+	    input.down();
+	    break;
+	  case 37:
+	  case 65:
+	    input.left();
+	    break;
+	  case 39:
+	  case 68:
+	    input.right();
+	    break;
+	}
+	/*var key=e.which;
+	var up=(key==38)||(key==87);
+	var down=(key==40)||(key==83);
+	var left=(key==37)||(key==65);
+	var right=(key==39)||(key==68);*/
+	//player.move(right-left,down-up);
+	//(key==78)&&end();
+}
+
+var textures=new Image();
+//textures.onload=draw;
+textures.onerror=function(){this.src='img/orbox.png';}
+textures.src="orbox.png";
+//levels=load.ext("SPack.json");
+
+
+
+		</script>
+		<style type="text/css">
+#canvas {background-color:black;}
+		</style>
+	<style type="text/css"></style><style type="text/css"></style></head>
+	<body>
+		<canvas id="canvas" width="140" height="160" style="float:left">
+		</canvas><div id="description"></div>
+		<div style="clear:both;">
+			<div style="float:left;text-align:center;">
+				<button onclick="input.up()">up</button><br />
+				<button onclick="input.left()">left</button>
+				<button onclick="input.right()">right</button><br />
+				<button onclick="input.down()">down</button><br />
+			</div>
+			<div id="scroll" style="display:none; margin-left:40px;">
+				<button onclick="input.back()">back</button>
+				<button onclick="input.next()">next</button>
+			</div>
+		</div>
+		<br /><br />
+		<div style="clear:both; margin-top:60px;">
+			<button onclick='load.ext("SPack.json")'>standard levels</button>
+			<button onclick='load.ext("tutorials.json")'>learning levels</button>
+			<button onclick='load.ext("GRPack.json")'>19*12 levels</button>
+			<button onclick='load.ext("lvl.json")'>more levels</button>
+			<button onclick='load.ext(prompt("write, or copy the filename or url here","orboxmap.JSON"))'>load external levels</button>
+			<button onclick='input.loadFile(prompt("copy the JSON text here","{}"));'>load from JSON text</button>
+			<br />
+			<br />
+			<button onclick='load.textures("orbox.png",20)'>load standard textures</button> 
+			<button onclick='load.textures("http://s24.postimg.org/7q1enlojp/orbottextures.png",40)'>load Julian's textures</button>
+			<button onclick='load.textures(prompt("Enter the path or url of the image",textures.src),prompt("Enter the scale./nThis is the width of one block in the image (in pixels)",scl))'>load custom textures</button><br /><br />
+			<button onclick='load.mod(prompt("write, or copy the filename or url here","")'>load a mod</button><br />
+		</div>
+	</body>
+</html>
+						

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<script type="text/javascript" src="http://www.troido.nl/frameworks/inheritance.js"></script>
+		<script type="text/javasctipt" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript">
+
+
+
+var STD_SPEED=3, STD_XTURN=12, STD_YTURN=1, HOLE_SIZE=5, HOLE_MIN_DISTANCE=25, HOLE_VAR_DISTANCE=100, SPAWN_OFFSET=50,CENTER_COLOR="#010101";
+(function(){
+	var len=Math.sqrt(STD_XTURN*STD_XTURN+STD_YTURN*STD_YTURN);
+	STD_XTURN/=len;
+	STD_YTURN/=len;
+})();
+
+// (a+bi)*(c+di) = ac+adi+bci+bdii = ac-bd+bci+adi = (ac-bd)+(bc+ad)i
+
+var Imag={
+	multR:function(a,b,c,d){
+		return a*c-b*d;
+	},
+	multI:function(a,b,c,d){
+		return b*c+a*d;
+	},
+	getLength:function(a,b){
+		return Math.sqrt(a*a+b*b);
+	}
+}
+
+String.prototype.code=function(){
+	return this.charCodeAt(0);
+}
+
+var keys = {
+	down:[],
+	keypress:function(e) {this.down[e] = 1;},
+	keyunpress:function(e) {this.down[e] = 0},
+	clear:function(){
+		for (var i=0;i<this.down.length;i++)
+			this.down.i=0;
+	}
+}
+document.addEventListener("keydown",function(event){keys.keypress(event.which)});
+document.addEventListener("keyup",function(event){keys.keyunpress(event.which)});
+
+function Drawing(canvas){
+	this.canvas=canvas;
+	this.ctx=canvas.getContext("2d");
+	this.width=canvas.width;
+	this.height=canvas.height;
+	//this.imageData=this.ctx.getImageData(0,0,this.width,this.height).data;
+	
+	this.setSize=function(width,height){
+		this.width=width;
+		this.canvas.width=width;
+		this.height=height;
+		this.canvas.height=height;
+	};
+	this.fillCircle=function(x,y,r,color){
+		this.ctx.fillStyle=color;
+		this.ctx.beginPath();
+		this.ctx.arc(x,y,r,0,2*Math.PI);
+		this.ctx.fill();
+	};
+	this.strokeCircle=function(x,y,r,color){
+		this.ctx.strokeStyle=color;
+		this.ctx.beginPath();
+		this.ctx.arc(x,y,r,0,2*Math.PI);
+		this.ctx.stroke();
+	};
+	this.fillBlurryCircle=function(x,y,r0,r1,color){
+		var grd=this.ctx.createRadialGradient(x,y,r0,x,y,r1);
+		grd.addColorStop(0,color);
+		grd.addColorStop(1,"rgba(0,0,0,0)");
+		this.fillCircle(x,y,r1,grd);
+	};
+	/*this.update=function(){
+		this.imageData=this.ctx.getImageData(0,0,this.width,this.height).data;
+	};*/
+	this.copy=function(){
+		return this.ctx.getImageData(0,0,this.width,this.height);
+	};
+	this.paste=function(data){
+		this.ctx.putImageData(data,0,0);
+	};
+	this.outOfRange=function(x,y){
+		return (x<0||x>=this.width||y<0||y>=this.height);
+	}
+	this.getPixel=function(x,y){
+		if (this.outOfRange(x,y)){
+			x<0&&(x=0);
+			x>=this.width&&(x=this.width);
+			y<0&&(y=0);
+			y>=this.height&&(y=this.height);
+		}
+		var imageData=this.ctx.getImageData(x,y,1,1).data;
+		return imageData[0]+imageData[1]*256+imageData[2]*65536;
+	};
+	this.getPixelRed=function(x,y){
+		if (this.outOfRange(x,y)){
+			x<0&&(x=0);
+			x>=this.width&&(x=this.width);
+			y<0&&(y=0);
+			y>=this.height&&(y=this.height);
+		}
+		var imageData=this.ctx.getImageData(x,y,1,1).data;
+		return imageData[0];
+	};
+	this.getPixelGreen=function(x,y){
+	if (this.outOfRange(x,y)){
+			x<0&&(x=0);
+			x>=this.width&&(x=this.width);
+			y<0&&(y=0);
+			y>=this.height&&(y=this.height);
+		}
+		var imageData=this.ctx.getImageData(x,y,1,1).data;
+		return imageData[1];
+	};
+	this.getPixelBlue=function(x,y){
+		if (this.outOfRange(x,y)){
+			x<0&&(x=0);
+			x>=this.width&&(x=this.width);
+			y<0&&(y=0);
+			y>=this.height&&(y=this.height);
+		}
+		var imageData=this.ctx.getImageData(x,y,1,1).data;
+		return imageData[2];
+	};
+	this.clear=function(){
+		this.ctx.fillStyle="#000000";
+		this.ctx.fillRect(0,0,this.width,this.height);
+	};
+	this.fill=function(style){
+		this.ctx.fillStyle=style;
+		this.ctx.fillRect(0,0,this.width,this.height);
+	}
+}
+
+
+function Player(color,controller,name){
+	this.color=color||"#FFFFFF";
+	this.x=0;
+	this.y=0;
+	this.xDir=1;
+	this.yDir=0;
+	this.rad=3;
+	this.speed=1;
+	this.alive=false;
+	this.leaveTrail=1;
+	if (controller) this.controller=controller
+	else this.controller=new VoidBot();
+	if (name) this.name=name;
+	else this.name="Gronald";
+	
+	this.score=0;
+	
+	this.makeHole=0;
+	this.vulnerable=1;
+	
+	this.place=function(width,height){
+		this.x=SPAWN_OFFSET+Math.random()*(width-2*SPAWN_OFFSET);
+		this.y=SPAWN_OFFSET+Math.random()*(height-2*SPAWN_OFFSET);
+		this.alive=true;
+		this.leaveTrail=false;
+		this.makeHole=0;
+		var c=Math.random()*Math.PI*2
+		this.xDir=Math.cos(c);
+		this.yDir=Math.sin(c);
+		this.speed=STD_SPEED;
+	};
+	this.outOfField=function(field){
+		return (this.x<0||this.x>=field.width||this.y<0||this.y>=field.height);
+	}
+	this.collides=function(field){
+		return field.getPixelRed(Math.round(this.x+this.rad*this.xDir),Math.round(this.y+this.rad*this.yDir))||
+			field.getPixelRed(Math.round(this.x+this.rad*(this.xDir+this.yDir)),Math.round(this.y+this.rad*(this.yDir-this.xDir)))||
+			field.getPixelRed(Math.round(this.x+this.rad*(this.xDir-this.yDir)),Math.round(this.y+this.rad*(this.yDir+this.xDir)));
+	}
+	this.die=function(){
+		this.alive=false;
+	}
+	this.step=function(field){
+		/*var a=0;
+		this.controller&&(a=this.controller.step());
+		if (a>0) this.turnRight();
+		else if (a<0) this.turnLeft();*/
+		
+		this.x+=this.xDir*this.speed;
+		this.y+=this.yDir*this.speed;
+		
+		if (this.outOfField(field)||this.collides(field)) this.die();
+		this.makeHole--;
+		if (this.makeHole<HOLE_SIZE){
+			if (this.makeHole<0){
+				this.makeHole=HOLE_MIN_DISTANCE+Math.random()*HOLE_VAR_DISTANCE;
+				this.leaveTrail=true;
+			}else
+				this.leaveTrail=false;
+		}
+		return this.alive;
+	};
+	this.turn=function(vx,vy){
+		this.xDir=this.xDir*vx-this.yDir*vy;
+		this.yDir=this.xDir*vy+this.yDir*vx;
+		var l=Math.sqrt(this.xDir*this.xDir+this.yDir*this.yDir);
+		this.xDir/=l;
+		this.yDir/=l;
+	};
+	this.turnLeft=function(){
+		this.turn(STD_XTURN,-STD_YTURN);
+	};
+	this.turnRight=function(){
+		this.turn(STD_XTURN,STD_YTURN);
+	};
+	this.setPlace=function(field){
+		if (this.leaveTrail)
+			field.fillCircle(this.x,this.y,this.rad,"#FFFFFF");
+	}
+	this.showPlace=function(field){
+		field.fillCircle(this.x,this.y,this.rad+80,"#010000");
+		field.fillCircle(this.x,this.y,this.rad+40,"#000100");
+		field.fillCircle(this.x,this.y,this.rad+20,"#000001");
+	}
+	this.setController=function(controller){
+		this.controller=controller;
+	};
+	this.setColor=function(color){
+		this.color=color;
+	};
+	this.setName=function(name){
+		this.name=name;
+	};
+	this.draw=function(screen){
+		screen.fillCircle(this.x,this.y,this.rad,this.color);
+	};
+	this.getData=function(){
+		return {color:this.color,controller:this.controller};
+	};
+	
+}
+
+function Controller(leftKey,rightKey){
+	this.type="keys";
+	this.leftKey=leftKey;
+	this.rightKey=rightKey;
+	
+	this.step=function(){
+		return (keys.down[rightKey]||0)-(keys.down[leftKey]||0)
+	}
+	
+}
+
+function VoidBot(){
+	this.type="void";
+	this.step=function(){void 0};
+}
+
+function SimpleBot(){
+	this.type="bot";
+	this.step=function(field,x,y,dx,dy){
+		// (a+bi)*(c+di) = (ac-bd)+(bc+ad)i
+		// (a+bi)*(c+ci) = (ac-bc)+(bc+ac)i
+		// (a+bi)*(c-ci) = (ac+bc)+(bc-bc)i
+		dx*=Math.SQRT2;
+		dy*=Math.SQRT2;
+		var dist=5
+		var r=field.getPixelRed(Math.round(x+dist*(dx-dy)),Math.round(y+dist*(dx+dy)))
+			-field.getPixelRed(Math.round(x+dist*(dx+dy)),Math.round(y-dist*(dx-dy)));
+		
+		return -r;
+	}
+}
+
+function OldBot(){
+	this.type="bot";
+	this.step=function(field,x,y,dx,dy){
+		/*var x1=9,y1=5;
+		var x2=19,y2=6;
+		var x3=12,y3=6;
+		var x4=18,y4=10;
+		/*debug.fillCircle(Math.round(x),Math.round(y),4,"#00FF00");
+		debug.fillCircle(Math.round(x+dx),Math.round(y+dy),2,"#00FFFF");
+		debug.strokeCircle(Math.round(x+Imag.multR(dx,dy,x1,y1)),Math.round(y+Imag.multI(dx,dy,x1,y1)),20,"#FFFFFF");
+		debug.strokeCircle(Math.round(x+Imag.multR(dx,dy,x2,y2)),Math.round(y+Imag.multI(dx,dy,x2,y2)),20,"#FFFFFF");
+		debug.strokeCircle(Math.round(x+Imag.multR(dx,dy,x3,y3)),Math.round(y+Imag.multI(dx,dy,x3,y3)),40,"#FFFFFF");
+		debug.strokeCircle(Math.round(x+Imag.multR(dx,dy,x4,y4)),Math.round(y+Imag.multI(dx,dy,x4,y4)),80,"#FFFFFF");
+		debug.strokeCircle(Math.round(x+Imag.multR(dx,dy,x1,-y1)),Math.round(y+Imag.multI(dx,dy,x1,-y1)),20,"#FFFFFF");
+		debug.strokeCircle(Math.round(x+Imag.multR(dx,dy,x2,-y2)),Math.round(y+Imag.multI(dx,dy,x2,-y2)),20,"#FFFFFF");
+		debug.strokeCircle(Math.round(x+Imag.multR(dx,dy,x3,-y3)),Math.round(y+Imag.multI(dx,dy,x3,-y3)),40,"#FFFFFF");
+		debug.strokeCircle(Math.round(x+Imag.multR(dx,dy,x4,-y4)),Math.round(y+Imag.multI(dx,dy,x4,-y4)),80,"#FFFFFF");
+		
+		var r=12*field.getPixelBlue(Math.round(x+Imag.multR(dx,dy,x1,y1)),Math.round(y+Imag.multI(dx,dy,x1,y1)))
+			+6*field.getPixelBlue(Math.round(x+Imag.multR(dx,dy,x2,y2)),Math.round(y+Imag.multI(dx,dy,x2,y2)))
+			+3*field.getPixelGreen(Math.round(x+Imag.multR(dx,dy,x3,y3)),Math.round(y+Imag.multI(dx,dy,x3,y3)))
+			+2*field.getPixelRed(Math.round(x+Imag.multR(dx,dy,x4,y4)),Math.round(y+Imag.multI(dx,dy,x4,y4)))
+			-12*field.getPixelBlue(Math.round(x+Imag.multR(dx,dy,x1,-y1)),Math.round(y+Imag.multI(dx,dy,x1,-y1)))
+			-6*field.getPixelBlue(Math.round(x+Imag.multR(dx,dy,x2,-y2)),Math.round(y+Imag.multI(dx,dy,x2,-y2)))
+			-3*field.getPixelGreen(Math.round(x+Imag.multR(dx,dy,x3,-y3)),Math.round(y+Imag.multI(dx,dy,x3,-y3)))
+			-2*field.getPixelRed(Math.round(x+Imag.multR(dx,dy,x4,-y4)),Math.round(y+Imag.multI(dx,dy,x4,-y4)));*/
+		
+		var r=0;
+		for (var i=0;i<OldBot.places.length;i++){
+			r+=OldBot.places[i][2]*field[OldBot.fn[OldBot.places[i][3]]](Math.round(x+Imag.multR(dx,dy,OldBot.places[i][0],OldBot.places[i][1])),Math.round(y+Imag.multI(dx,dy,OldBot.places[i][0],OldBot.places[i][1])));
+			r-=OldBot.places[i][2]*field[OldBot.fn[OldBot.places[i][3]]](Math.round(x+Imag.multR(dx,dy,OldBot.places[i][0],-OldBot.places[i][1])),Math.round(y+Imag.multI(dx,dy,OldBot.places[i][0],-OldBot.places[i][1])));
+		}
+		
+		console.log(r);
+		return -r;
+	};
+}
+OldBot.places=[[9,5,12,0],
+	[19,6,6,0],
+	[12,6,3,1],
+	[18,10,2,2]];
+OldBot.fn=["getPixelBlue","getPixelGreen","getPixelRed"];
+OldBot.setConfig=function(array){
+	this.places=array
+}
+
+function NeuralNetwork(layers){ 		// layers should be an array with for each layer the amount of cells in that layer
+	this.layers=layers;					// the first layer is special and the last layer is the output
+	this.data=[];
+	for (var i=0;i<layers.length;i++){
+		data[i]=[];
+	}
+	this.weights=[];
+	for (var i=0;i+1<layers.length;i++){
+		this.weights[i]=[]
+		for (var j=0;j<layers[i];j++){
+			this.weights[i][j]=[];
+		}
+	}
+	this.clearWeights=function(n){
+		for (var i=0;i+1<layers.length;i++){
+			for (var j=0;j<layers[i];j++){
+				for (var k=0;k<layers[i+1].length;k++){
+					weights[i][j][k]=n||0;
+				}
+			}
+		}
+	}
+	this.setWeights=function(weights){	// weights should be a 3D array that specifies the weight of each node in every layer to each node of the next layer
+		this.weights=weights;
+	}
+	this.eval=function(input){
+		this.data[0]=input;
+		for (var i=0;i+1<this.data.length;i++){
+			for (var j=0;j<this.data[i].length;j++){
+				for (var k=0;k<this.data[i+1].length;k++){
+					if (this.data[i][j])
+						this.data[i+i][k]+=this.weights[i][j][k];
+					
+				}
+			}
+		}
+	}
+	return this.data[this.data.lenght].concat();
+}
+
+
+function Room(output,width,height,players){
+	this.output=output;
+	this.players=players;
+	this.livingPlayers=[];
+	this.width=width;
+	this.height=height;
+	this.running=false;
+	this.background=new Drawing(document.createElement("canvas"));
+	this.collision=new Drawing(document.createElement("canvas"));
+	this.view=new Drawing(document.createElement("canvas"));
+	this.draw=function(){
+		this.output.clear();
+		this.output.paste(this.background.copy());
+		for (var i=0,p;i<this.livingPlayers.length;i++){
+			p=this.livingPlayers[i];
+			p.draw(this.output);
+			if (p.leaveTrail) {
+				p.draw(this.background);
+				p.showPlace(this.view);
+			}
+		}
+	};
+	this.stop=function(){
+		clearInterval(this.running);
+		this.running=false;
+	};
+	this.step=function(){
+		//this.debug.clear();
+		//window.debug.paste(this.view.copy());
+		//this.debug.paste(this.collision.copy());
+		/*for (var i=0,a;i<this.livingPlayers.length;i++){
+			a=this.livingPlayers[i]
+			if (a.controller){
+				var b=a.controller.step(this.view,a.x,a.y,a.xDir*a.speed,a.yDir*a.speed);
+				if (b>0) a.turnRight();
+				else if (b<0) a.turnLeft();
+			}
+		}
+		for (var i=0,p;i<this.livingPlayers.length;i++){
+			if (!this.livingPlayers[i].step(this.collision)){
+				this.livingPlayers.splice(i,1);
+				if (this.livingPlayers.length<=1)
+					this.stop();
+			}
+		}
+		for (var i=0,p;i<this.livingPlayers.length;i++){
+			this.livingPlayers[i].setPlace(this.collision);
+		}/*/
+		for (var i=0,p;i<this.livingPlayers.length;i++){
+			a=this.livingPlayers[i]
+			if (a.controller){
+				var b=a.controller.step(this.view,a.x,a.y,a.xDir*a.speed,a.yDir*a.speed);
+				if (b>0) a.turnRight();
+				else if (b<0) a.turnLeft();
+			}
+			if (!a.step(this.collision)){
+				this.livingPlayers.splice(i,1);
+				if (this.livingPlayers.length<=1)
+					this.stop();
+			}
+		}
+		for (var i=0,p;i<this.livingPlayers.length;i++){
+			this.livingPlayers[i].setPlace(this.collision);
+		}
+		
+		//this.collision.update();
+		//this.view.update();
+		this.draw();
+	};
+	this.start=function(){
+		if (this.running) return;
+		this.output.setSize(this.width,this.height);
+		this.output.clear();
+		this.background.setSize(this.width,this.height);
+		this.background.clear();
+		this.collision.setSize(this.width,this.height);
+		this.collision.clear();
+		this.view.setSize(this.width,this.height);
+		this.view.fill("rgba(0,0,0,0)");
+		this.view.ctx.globalCompositeOperation="lighter";
+		if (!0){
+			(function(drw){
+				var pl=new Player();
+				for (var i=0;i<drw.width;i+=STD_SPEED/2){
+					pl.x=i;
+					pl.y=0;
+					pl.showPlace(drw);
+					pl.x=i;
+					pl.y=drw.height
+					pl.showPlace(drw);
+					//drw.fillCircle(i,0,80,CENTER_COLOR);
+					//drw.fillCircle(i,drw.height,80,CENTER_COLOR);
+				}
+				for (var i=0;i<drw.height;i+=STD_SPEED/2){
+					pl.x=0;
+					pl.y=i;
+					pl.showPlace(drw);
+					pl.x=drw.width;
+					pl.y=i;
+					pl.showPlace(drw)
+					//drw.fillCircle(0,i,80,CENTER_COLOR);
+					//drw.fillCircle(drw.width,i,80,CENTER_COLOR);
+				}
+			})(this.view);
+		}
+		this.livingPlayers=this.players.concat();
+		for (var i=0;i<this.players.length;i++){
+			this.players[i].place(this.width,this.height);
+		}
+		this.running=setInterval(function(room){room.step()},0,this);
+	};
+	this.restart=function(){
+		this.stop();
+		this.start();
+	}
+	
+	this.addPlayer=function(player,n){
+		if (!n);
+			n=this.players.length;
+		this.players.splice(n,0,player)
+	};
+	this.removePlayer=function(n){
+		this.players.splice(n,1);
+	};
+	this.getPlayerData=function(n){
+		return this.players[n].getData();
+	};
+	this.getPlayerLength=function(){
+		return this.players.length;
+	};
+	this.addPlayers=function(array){
+		this.players=this.players.concat(array);
+	}
+	this.clearPlayers=function(){
+		this.players=[];
+	}
+	
+	this.output.clear();
+	this.background.clear();
+}
+
+/*function printPlayerSettings(room,n){
+	var player=room.players[n];
+	var txt="<textarea rows=1>"+player.name+"</textarea> <input value='"player.color"'> <select><option>keys</option><option>bot</option><option>-</option></select>";
+}
+
+function printPlayers(room){
+	
+}*/
+
+
+document.addEventListener("keydown",function(event){if (event.which==32) room.start();});
+
+
+function main(){
+	window.debug=new Drawing(document.getElementById("collision"));
+	window.debug.setSize(640,640);
+	var screen=new Drawing(document.getElementById("playfield"));
+	var players=[new Player("#FF0000",new OldBot()),new Player("#00FF00",new OldBot()),new Player("#0000FF",new OldBot())];//new Controller(37,39))];
+	//new Controller(players[1],37,39);
+	var room=new Room(screen,640,640,players);
+	//room.start();
+	room.draw();
+	window.room=room;
+	console.log(room);
+}
+
+		</script>
+	</head>
+	<body onload="main()">
+		<canvas id="playfield" width=512 height=512 >
+			Your browser does not support the canvas element.<br />
+			You should get a better browser, like <a href="http://www.google.com/chrome">google chrome</a> or <a href="http://www.mozilla.org/en-US/">mozilla firefox</a>.
+		</canvas>
+		<canvas id="collision" style="background-color:black";></canvas>
+		<br />
+		<div id="touch">
+			<!--textarea cols=1 rows=1></textarea-->
+		</div>
+		<button onclick="room.start()">Start</button>
+		<button onclick="room.restart()" style="margin-left:1000px;">Restart</button>
+		<!--div id="players">
+		</div>
+		<button onclick="addPlayer()">Add player</button>
+		<br />
+		<button onclick="enableTouch()">Enable touchscreen mode</button-->
+	</body>
+</html>

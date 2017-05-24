@@ -1,0 +1,11 @@
+{ "columns":8,
+ "image":"standart_tiles.png",
+ "imageheight":320,
+ "imagewidth":256,
+ "margin":0,
+ "name":"standart_tiles",
+ "spacing":0,
+ "tilecount":80,
+ "tileheight":32,
+ "tilewidth":32
+}

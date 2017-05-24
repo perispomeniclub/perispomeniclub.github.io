@@ -1,0 +1,14 @@
+{"levels":[
+	{
+		"field":[[0,0,0,1,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,0,0,0,0],[1,0,0,0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,2,0,0],[0,0,0,0,0,1,0,0,0,0,0],[0,1,1,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,1,1,0,0,0]],
+		"indices":["","block","end","cornerTR","cornerTL","cornerBR","cornerBL","stop","clickerH","clickerV","","teleM","teleM","teleC","teleC","teleB","teleB"],
+		"x0":3,"y0":4,
+		"description":"This is the game Orbox. You are the white square Use the arrow keys or WASD to move around. If you move in a direction, you will continue until you hit a solid block. If you go out of the map, you die and you have to restart the level. The goal is to reach the red square."
+	},
+	{"field":[[1,0,0,0,0,3,5,0,3,0,0],[5,0,0,0,0,0,4,6,0,0,0],[0,0,0,0,0,0,1,0,0,0,3],[0,0,0,0,0,0,0,0,3,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,1,0,0,6,0,4,0,0,0],[6,0,0,0,0,0,0,0,0,0,3],[1,0,0,0,6,0,0,0,1,0,0],[1,6,0,0,0,0,0,0,0,2,0],[1,1,6,0,1,0,0,0,0,0,4]],"indices":["","block","end","cornerTR","cornerTL","cornerBR","cornerBL","stop","clickerH","clickerV","","teleM","teleM","teleC","teleC","teleB","teleB"],"x0":3,"y0":4,
+		"description":"Corner blocks make you change your direction without stopping you."
+	},
+	{"field":[[4,5,0,0,0,0,0,0,0,0,3],[5,0,3,1,0,1,0,0,7,3,0],[0,0,0,0,0,0,0,0,0,0,0],[0,4,0,0,0,4,0,4,6,0,4],[1,0,0,0,0,0,0,3,5,0,3],[5,0,4,6,0,0,0,7,0,0,0],[6,0,0,0,0,3,1,0,0,0,2],[1,7,7,7,1,0,0,0,0,0,1],[0,0,0,0,0,0,0,4,6,0,0],[1,1,0,6,0,0,0,0,0,0,4]],"indices":["","block","end","cornerTR","cornerTL","cornerBR","cornerBL","stop","clickerH","clickerV","","teleM","teleM","teleC","teleC","teleB","teleB"],"x0":3,"y0":4,
+	"description":"Stop blocks allow you to stop and change direction."
+	}
+]}

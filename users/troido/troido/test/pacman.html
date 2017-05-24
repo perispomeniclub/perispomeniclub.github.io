@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+
+
+<script type="text/javascript" src="keys.js">
+</script>
+<script type="text/javascript">
+
+var room;
+var ctx;
+var col;
+
+function drawcircle(obj,r,outline,c){
+c.beginPath(); c.arc(obj.x,obj.y,r,0,2*Math.PI);
+if (outline) c.stroke(); else c.fill()}
+
+var obj1={x:20,y:40};
+var obj2={x:120,y:60};
+
+function start(){
+
+room=document.getElementById("canvas");
+ctx=room.getContext("2d");
+col=document.getElementById("collisions").getContext("2d");
+
+setInterval("update()", 33);
+}
+
+function update(){
+obj1.x+=3*(keys[39]-keys[37]);
+obj1.y+=3*(keys[40]-keys[38]);
+ctx.clearRect(0,0,room.width,room.height);
+drawcircle(obj1,20,0,ctx);
+drawcircle(obj2,30,1,ctx);
+collisionTest();
+}
+
+function collisionTest(){
+col.clearRect(0,0,room.width,room.height);
+drawcircle(obj2,30,1,col);
+col.globalCompositeOperation='source-in';
+drawcircle(obj1,20,0,col);
+col.globalCompositeOperation='source-over';
+var a= new Array();
+a = col.getImageData(0,0,room.width,room.height).data;
+showText(a.valueOf())
+alert(a.indexOf(255));
+if (a.indexOf(255)!=-1){
+alert(1)
+showText("collision");
+} else {
+alert(2)
+showText("nothing");
+}
+alert(3)
+}
+
+function showText(string){document.getElementById("test").innerHTML=string;}
+
+</script>
+<style type="text/css">
+.invisible {display:none;}
+canvas {width:400;height:200;border:1px solid;}
+</style>
+</head>
+<body onload="start()" onkeydown="keypress(event)" onkeyup="keyunpress(event)">
+<p id="test">hey</p>
+<canvas id="canvas">
+Your browser doesn't support the canvas element<br />
+Please use a better browser like <a href="https://www.google.com/intl/nl/chrome/browser/">Google Chrome</a> 
+</canvas>
+<br />
+<div id="images" class="invisible">
+</div>
+<canvas id="collisions">
+</canvas>
+</body>
+</html>
+

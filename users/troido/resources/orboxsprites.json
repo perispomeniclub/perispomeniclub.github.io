@@ -1,0 +1,134 @@
+{
+	"scale": 20,
+	"sprites":{
+		"template": {
+			"image":"orbox/textures.png",
+			"sx": 17,
+			"sy": 0,
+			"swidth": 8,
+			"sheight": 8,
+			"cx":4,
+			"cy":4
+		},
+		"player": {
+			"image":"orbox/textures.png",
+			"sx": 0,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "O"
+		},
+		"end":{
+			"image":"orbox/textures.png",
+			"sx": 20,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "X"
+		},
+		"block": {
+			"image":"orbox/textures.png",
+			"sx": 60,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "█"
+		},
+		"cornerTL": {
+			"image":"orbox/textures.png",
+			"sx": 120,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◢"
+		},
+		"cornerTR": {
+			"image":"orbox/textures.png",
+			"sx": 140,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◣"
+		},
+		"cornerBR": {
+			"image":"orbox/textures.png",
+			"sx": 80,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◤"
+		},
+		"cornerBL": {
+			"image":"orbox/textures.png",
+			"sx": 100,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◥"
+		},
+		"teleM": {
+			"image":"orbox/textures.png",
+			"sx": 0,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◉"
+		},
+		"teleC": {
+			"image":"orbox/textures.png",
+			"sx": 20,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◎"
+		},
+		"teleB": {
+			"image":"orbox/textures.png",
+			"sx": 140,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "☉"
+		},
+		"stopper": {
+			"image":"orbox/textures.png",
+			"sx": 40,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "╬"
+		},
+		"clickerH": {
+			"image":"orbox/textures.png",
+			"sx": 60,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "┅"
+		},
+		"clickerV": {
+			"image":"orbox/textures.png",
+			"sx": 80,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "┇"
+		},
+		"visited1": {
+			"image":"orbox/textures.png",
+			"sx": 100,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "·"
+		},
+		"visited2": {
+			"image":"orbox/textures.png",
+			"sx": 120,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "·"
+		}
+	}
+}

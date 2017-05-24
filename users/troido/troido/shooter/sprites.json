@@ -1,0 +1,48 @@
+{
+	"player": {
+		"image":"images.png",
+		"swidth": 16,
+		"sheight": 16,
+		"cx": 8,
+		"cy": 8
+	},
+	"bullet": {
+		"image":"images.png",
+		"sx": 17,
+		"sy": 0,
+		"swidth": 8,
+		"sheight": 8,
+		"cx":4,
+		"cy":4
+	},
+	"block": {
+		"image":"images.png",
+		"sx": 26,
+		"swidth": 8,
+		"sheight": 8
+	},
+	"explosion": {
+		"image":"images.png",
+		"sy": 17,
+		"swidth": 32,
+		"sheight": 30,
+		"cx": 16,
+		"cy": 15
+	},
+	"monster": {
+		"image":"images.png",
+		"sx": 35,
+		"swidth": 24,
+		"sheight": 24,
+		"copyright":"SpoonGraphics, http://www.blog.spoongraphics.co.uk"
+	},
+	"gun":{
+		"image":"images.png",
+		"sx": 17,
+		"sy":9,
+		"swidth": 12,
+		"sheight": 6,
+		"cy":3,
+		"cx":8
+	}
+}

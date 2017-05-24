@@ -1,0 +1,242 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script type="text/javascript">
+
+var room=new Object();
+var player=new Array()
+var keys = new Array();
+var ctx;
+
+function start() {
+	getVars();
+	drawBackground();
+	showPlayers();
+}
+
+
+function roundstart(){
+	clearInterval(room.step);
+	player.survivors = 0;
+	for (var a=0;a<player.length;a++)
+		player[a].place();
+	drawBackground();
+	draw();
+//	alert("prepare");
+	setDelayedInterval("update()", 3000, 33,"room.step");
+	room.running = 1;
+}
+
+
+function roundEnd(){
+//	alert("round over");
+	clearInterval(room.step);
+	room.running=0;
+}
+
+function update(){
+	for (var a=0;a<player.length;a++){
+		if (!player[a].alive) continue;
+		player[a].move();
+		
+	}
+	draw();
+}
+
+
+
+function move(){
+	if (this.checkCollision())
+		this.die();
+
+	if (keys[this.left]||keys[this.right]){
+		var a=imag_multiply( this.xto, this.yto, player.xturn, player.yturn*(keys[this.right]-keys[this.left]) );
+//		alert(a)
+		this.xto=a.real;
+		this.yto=a.imag;
+	}
+	this.x+=this.xto;
+	this.y+=this.yto;
+}
+
+
+function die(){
+	document.getElementById("text").style.backgroundColor=this.color;
+	this.alive = 0;
+	player.survivors--;
+	for (var a=0;a<player.length;a++)
+		 player[a].score+=player[a].alive;
+	showPlayers();
+	if (player.survivors<2)
+		roundEnd();
+}
+
+
+function checkCollision(){
+	var b = ctx.getImageData(this.x+6*this.xto,this.y+6*this.yto,1,1).data;
+	var a = sum2(b,3)+(this.x<0)+(this.x>room.width)+(this.y<0)+(this.y>room.height);
+	return(a);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+function getVars(){
+
+	ctx=document.getElementById("playfield").getContext("2d");
+
+	room.width=document.getElementById("playfield").width;
+	room.height=document.getElementById("playfield").height;
+	room.step=0;
+	room.running=0;
+
+//	moved=0;
+
+	for (var a=0;a<127;a++)
+		keys[a] = 0;
+
+	var turn=0.05;
+	player.xturn=Math.cos(turn);
+	player.yturn=Math.sin(turn);
+	player.stepsize=2;
+
+
+	player.survivors = 0;     //Maybe useless
+	//var n = prompt("how many players?",1);
+	//for (var a=0; a<n; a++) {player[a] = new makePlayer("#FFFFFF",37,39);}
+	player[0] = new makePlayer("#0000FF",37,39);
+	player[1] = new makePlayer("#FF0000",90,88);
+	player[2] = new makePlayer("#00FF00",78,77);
+	//player[3] = new makePlayer("#FFFF00",49,81);
+}
+
+
+function showPlayers(){
+
+	var players="<ol>";
+	for (var a=0;a<player.length;a++){
+		players+="<li id='player"+a+"' ><span class='color' style='background-color:"+player[a].color+";'> O </span> <span class='left'> left: "+player[a].left+".</span> <span class='right'>right: "+player[a].right+". </span><span class='score'>score: "+player[a].score+". </span><button onclick='player["+a+"].changePlayer()'>Change</button> <button onclick='remove("+a+")'>Remove</button></li>";
+	}
+	players+="</ol>";
+	document.getElementById("players").innerHTML=players;
+}
+
+
+
+function makePlayer(color,left,right){
+
+	this.color = color;
+	this.left = left;
+	this.right = right;
+
+	this.score = 0;
+
+	this.place = place;
+	this.move = move;
+	this.die = die;
+	this.checkCollision = checkCollision;
+	this.changePlayer = changePlayer;
+	
+	//this.place();
+}
+
+function changePlayer(){
+	this.color=prompt("color (hexadecimal starting with # or name)",this.color);
+	this.left=prompt("left key (enter keycode)",this.left);
+	this.right=prompt("right (enter keycode)",this.right);
+	showPlayers();
+}
+
+function addPlayer(){
+	var a=player.length;
+	player[a]= new makePlayer("#FFFFFF",0,0);
+	player[a].changePlayer();
+	showPlayers();
+}
+
+function remove(id){
+
+	if (confirm("Are you sure you want to remove this player?")){
+		player.splice(id,1);
+		showPlayers();
+	}
+}
+
+
+function place(){
+	this.x = room.width*Math.random();
+	this.y = room.height*Math.random();
+	this.alive = 1;
+	player.survivors++;
+	var dd = Math.random()*2*Math.PI;
+	this.xto = player.stepsize*Math.cos(dd);
+	this.yto = player.stepsize*Math.sin(dd);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+function drawBackground(){
+
+	ctx.fillStyle="#000000";
+	ctx.fillRect(0,0,room.width,room.height);
+}
+
+
+
+function draw(){
+
+	for (var a=0; a<player.length; a++){
+		ctx.fillStyle=player[a].color;
+		ctx.fillRect(player[a].x-2,player[a].y-2,4,4);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+function keydown(e){keypress(e.which)};
+function keypress(e) {keys[e] = 1; document.getElementById("text").innerHTML=e;};
+
+function keyup(e){keyunpress(e.which)};
+function keyunpress(e) { keys[e] = 0;};
+
+function enableTouch() {
+  var t="";
+  for (var i=0;i<player.length;i++){
+    alert(1)
+    t+="<button onmousedown='keypress("+player[i].left+")' onmouseup='keyunpress("+player[i].left+")'></button><button onmousedown='keypress("+player[i].right+")' onmouseup='keyunpress("+player[i].right+")'></button>";
+
+  }
+  document.getElementById("touch").innerHTML=t;
+}
+
+function imag_multiply(a,b,c,d) { var r={}; r.real=a*c-b*d; r.imag=a*d+b*c; return r; }
+
+function sum(obj) { var b=0; for (var a=0; a<obj.length; a++){ b+=obj(a); } return b; }
+
+function sum2(obj,end) {var b=0; for (var a=0; a<end; a++){ b+=obj[a]; } return b; }
+
+function setDelayedInterval(code,delay,steplength,name){var a = new Number(setTimeout(function(){var b=setInterval(code,steplength); eval(name+"="+b)},delay));return a;}
+
+
+</script>
+</head>
+
+<body onload="start()" onkeydown="keydown(event)" onkeyup="keyup(event)">
+<canvas id="playfield" width=512 height=512>
+Your browser does not support the canvas element.<br />
+You should get a better browser like <a href="http://www.google.com/chrome">google chrome</a> or <a href="http://www.mozilla.org/en-US/">mozilla firefox</a>.
+</canvas>
+<span id="text">HI!
+</span>
+<br />
+<div id="touch">
+<!--textarea cols=1 rows=1></textarea-->
+</div>
+<button onclick="roundstart()">Start</button>
+<div id="players">
+</div>
+<button onclick="addPlayer()">Add player</button>
+<br />
+<button onclick="enableTouch()">Enable touchscreen mode</button>
+</body>
+</html>		

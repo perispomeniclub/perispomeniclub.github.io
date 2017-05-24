@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<script>
+//
+
+var field,things=[],draw,SCL=50;
+
+function Grid(props){
+	this.value=[];
+	this.fill=function(val){
+		for	(var	i=0;i<this.size;i++)
+			this.value[i]=val;
+	};
+
+	this.fillO=function(con){
+		for	(var	i=0;i<this.size;i++)
+			this.value[i]=new	con(i%this.width,Math.floor(i/this.width),this.value[i]);
+	};
+
+	this.fillFn=function(fn){
+		for	(var	i=0;i<this.size;i++)
+			this.value[i]=fn(i%this.width,Math.floor(i/this.width),this.value[i]);
+	};
+	this.from2D=function(array2D){
+		this.width=array2D.length;
+		this.height=array2D[0].length;
+		this.size=this.width*this.height;
+		for	(var	i=0;i<this.size;i++){
+			this.value[i]=array2D[i%this.width][Math.floor(i/this.width)]||0;
+		};
+	}
+	this.to2D=function(){
+		var arr=[];
+		for (var i=0;i<this.width;i++){
+			arr[i]=this.getCol(i);
+		}
+		return arr;
+	};
+	this.resize=function(width,height){
+		var arr=this.to2D();
+		this.width=width;
+		this.height=height;
+		this.size=width*height;
+		for	(var	i=0;i<this.size;i++){
+			if (i%this.width>=arr.length){
+				this.value[i]=0;
+				continue;
+			}
+			this.value[i]=arr[i%this.width][Math.floor(i/this.width)]||0;
+		};
+	}
+	this.getLine=function(y){
+		return	this.value.slice(y*this.width,(y+1)*this.width);
+	};
+	this.getCol=function(x){
+		var	a=[];
+		for	(var	i=0;i<this.height;i++)
+			a.push(this.get(x,i));
+		return	a;
+	},
+
+	this.for=function(fn){
+		for	(var	i=0;i<this.size;i++)
+			fn(i%this.width,Math.floor(i/this.width),this.value[i]);
+	};
+
+	this.legit=function(x,y){
+		return	(x>=0&&y>=0&&x<this.width&&y<this.height);
+	};
+
+	this.get=function(x,y){
+		return	(this.legit(x,y)&&this.value[Math.floor(x)+Math.floor(y)*this.width]);
+	};
+
+	this.copy=function(){
+		var	a=new	Grid();
+		for		(x	in	this)
+			a[x]=this[x];
+		a.value=this.value.concat();
+		return a;
+	}
+
+	this.set=function(x,y,val){
+		return	(this.legit(x,y)&&(this.value[Math.floor(x)+Math.floor(y)*this.width]=val));
+	};
+	this.add=function(x,y,val){
+		return	(this.legit(x,y)&&(this.value[Math.floor(x)+Math.floor(y)*this.width]+=val));
+	};
+	this.clear=function(){
+		this.value=[];
+		this.width=0;
+		this.height=0;
+	}
+	for	(i	in	props)
+		this[i]=props[i];
+	!this.size&&(this.size=this.width*this.height);
+	this.init&&this.init();
+}
+
+
+
+function Thing(grid,list,x,y,shape,size){
+	this.shape=shape;
+	this.size=size;
+	this.id=Thing.n++;
+	this.field=false;
+	this.labels=[];
+	this.selected=0;
+	this.list=list
+	list.push(this);
+	
+	this.move=function(grid,x,y){
+		if (this.field){
+			this.field.set(this.x,this.y,false);
+		}
+		if (!grid.legit(x,y)||grid.get(x,y)){
+			this.field=false;
+		} else{
+			grid.set(x,y,this);
+			this.field=grid;
+			this.x=x;
+			this.y=y;
+		}
+	}
+	this.remove=function(){
+		if (this.field){
+			this.field.set(this.x,this.y,false);
+			for (var i=0;i<this.list.length;i++){
+				if (this.list[i]==this){
+					this.list.splice(i,1);
+				}
+			}
+		}
+	}
+	this.toggleLabel=function(label){
+		var a=this.labels.indexOf(label)
+		if (a>=0) {
+			this.labels.splice(a,1);
+			labels[label]=false;
+		}
+		else if (!labels[label]){
+			this.labels.push(label);
+			labels[label]=this;
+		}
+	}
+	
+	this.move(grid,x,y);
+}
+Thing.n=0;
+
+
+
+function Drawing(canvas){
+	this.canvas=canvas;
+	this.ctx=canvas.getContext("2d");
+	this.width=canvas.width;
+	this.height=canvas.height;
+	
+	this.setSize=function(width,height){
+		this.width=width;
+		this.canvas.width=width;
+		this.height=height;
+		this.canvas.height=height;
+	};
+	this.fillCircle=function(x,y,r,color){
+		this.ctx.fillStyle=color;
+		this.ctx.beginPath();
+		this.ctx.arc(x,y,r,0,2*Math.PI);
+		this.ctx.fill();
+	};
+	this.drawTriangle=function(x,y,r,color){
+		this.ctx.fillStyle=color;
+		this.ctx.beginPath();
+		this.ctx.moveTo(x,y-r*1.5);
+		this.ctx.lineTo(x+r,y+r);
+		this.ctx.lineTo(x-r,y+r);
+		this.ctx.closePath();;
+		this.ctx.fill();
+		this.ctx.strokeStyle="#000000";
+		this.ctx.stroke();
+	};
+	this.drawHex=function(x,y,r,color){
+		this.ctx.fillStyle=color;
+		this.ctx.beginPath();
+		this.ctx.moveTo(x-1.2*r,y);
+		this.ctx.lineTo(x-0.7*r,y-r);
+		this.ctx.lineTo(x+0.7*r,y-r);
+		this.ctx.lineTo(x+1.2*r,y);
+		this.ctx.lineTo(x+0.7*r,y+r);
+		this.ctx.lineTo(x-0.7*r,y+r);
+		this.ctx.closePath();;
+		this.ctx.fill();
+		this.ctx.strokeStyle="#000000";
+		this.ctx.stroke();
+	};
+	this.drawSquare=function(x,y,r,color){
+		this.ctx.fillStyle=color;
+		this.ctx.fillRect(x-r,y-r,r*2,r*2);
+		this.ctx.strokeStyle="#000000"
+		this.ctx.strokeRect(x-r,y-r,r*2,r*2);
+	};
+	this.drawTiles=function(c1,c2,l){
+		this.fill(c1);
+		this.ctx.fillStyle=c2;
+		var x,y;
+		for(y=0;y*l<this.height;y++){
+			for (x=y%2;x*l<this.width;x+=2){
+				this.ctx.fillRect(x*l,y*l,l,l);
+			}
+		}
+	};
+	this.fill=function(color){
+		this.ctx.fillStyle=color;
+		this.ctx.fillRect(0,0,this.width,this.height);
+	};
+	this.clear=function(){
+		this.ctx.fillStyle="#000000";
+		this.ctx.fillRect(0,0,this.width,this.height);
+	};
+	
+	this.drawField=function(grid,l,selection){ // l is the length of one square
+		this.drawTiles("#a0a0a0","#606060",l);
+		var x,y;
+		for (x=0;x<grid.width;x++){
+			for(y=0;y<grid.height;y++){
+				var thing=grid.get(x,y)
+				if (thing){
+					this.drawShape(thing,x,y,l);
+				}
+					
+			}
+		}
+	};
+	this.drawShape=function(thing,x,y,l){
+		(this[translator.shape[thing.shape]])(l*(x+0.5),l*(y+0.5),l*translator.sizeToRad[thing.size]*0.5,translator.color[thing.shape]);
+		if (thing.labels.length){
+			this.ctx.fillStyle="#FFFFFF";
+			var w=5,h=5;
+			this.ctx.fillRect(l*(x+0.5)-5*thing.labels.length,l*(y+0.5)-h,2*w*thing.labels.length,2*h);
+			this.ctx.fillStyle="#000000";
+			for (var i=0;i<thing.labels.length;i++){
+				this.ctx.fillText(thing.labels[i],l*(x+0.5)-w*(thing.labels.length-2*i),l*(y+0.5)+h);
+			}
+		}
+		if (thing.selected){
+			this.ctx.fillStyle="#000000";
+			this.ctx.fillText("X",l*(x+0.5),l*(y+0.75));
+		}
+	}
+}
+
+function showProps(){
+	if (selected.obj){
+		document.getElementById(selected.obj.size).checked=true;
+		document.getElementById(selected.obj.shape).checked=true;
+		var l=document.getElementsByClassName("label");
+		for (var i=0;i<l.length;i++){
+			var p=labels[l[i].id]
+			if (!p){
+				l[i].disabled=false;
+				l[i].checked=false;
+			} else if (p.id==selected.obj.id){
+				l[i].disabled=false;
+				l[i].checked=true;
+			} else{
+				l[i].disabled=true;
+				l[i].checked=false;
+			}
+		}
+	}
+		
+}
+
+function drawWorld(){
+	draw.drawField(field,SCL);
+	showProps();
+}
+
+var selected={
+	obj:false,
+	x:false,
+	y:false,
+	select:function(grid,x,y){
+		var a=grid.get(x,y);
+		if (a){
+			this.obj.selected=0;
+			this.obj=a;
+			a.selected=1;
+			this.x=x;
+			this.y=y;
+			drawWorld();
+			return 1;
+		}
+		else return 0;
+	},
+	delete:function(){
+		this.obj.remove();
+		this.x=false;
+		this.y=false;
+		drawWorld();
+	},
+	setShape:function(shape){
+		if (this.obj){
+			this.obj.shape=shape;
+		}
+		drawWorld();
+	},
+	setSize:function(size){
+		if (this.obj){
+			this.obj.size=size;
+		}
+		drawWorld();
+	},
+	label:function(label){
+		if (this.obj){
+			this.obj.toggleLabel(label);
+		}
+		drawWorld();
+	}
+};
+
+
+var translator={
+	sizeToRad:{
+		small:0.5,
+		medium:0.9,
+		large:1.5,
+	},
+	sizeToNum:{
+		small:1,
+		medium:2,
+		large:3
+	},
+	shape:{
+		cube:"drawSquare",
+		tet:"drawTriangle",
+		dodec:"drawHex"
+	},
+	color:{
+		cube:"#00FFFF",
+		dodec:"#FFFF00",
+		tet:"#FF00FF",
+	},
+};
+
+var labels={
+	a:false,b:false,c:false,d:false,e:false,f:false
+}
+
+function fieldClick(e){
+	var mouseX=e.clientX-e.currentTarget.offsetLeft+pageXOffset,
+		mouseY=e.clientY-e.currentTarget.offsetTop+pageYOffset;
+	var x=Math.floor(mouseX/SCL),y=Math.floor(mouseY/SCL);
+	if (selected.select(field,x,y)) {
+		draw.drawField(field,SCL);
+		return;
+	}
+	else if (selected.obj) {
+		selected.obj.move(selected.obj.field,x,y);
+		draw.drawField(field,SCL);
+	}
+}
+
+function addThing(field,list){
+	var x=0,y=0;
+	while(y<field.height&&field.get(x,y)){
+		while(x<field.width&&field.get(x,y)){
+			x++;
+		}
+		if (x>=field.width){
+			x=0;
+			y++;
+		}
+	}
+	if (field.get(x,y)) return -1;
+	var a=new Thing(field,list,x,y,"cube","small");
+	selected.select(field,x,y);
+	return a;
+}
+
+function main(){
+	field=new Grid({width:8,height:8});
+	field.fill(false);
+	var a=new Thing(field,things,1,1,"cube","large");
+	a.toggleLabel("c");
+	new Thing(field,things,2,1,"cube","small");
+	new Thing(field,things,3,1,"dodec","medium");
+	draw=new Drawing(document.getElementById("canvas"));
+	draw.setSize(SCL*field.width,SCL*field.height);
+	draw.drawField(field,SCL);
+	//window.l=document.getElementById("sentences").getElementsByTagName("ol")[0]
+}
+
+function setSigns(event){
+	var element=event.currentTarget;
+	var text=element.value;
+	var ss=element.selectionStart,se=element.selectionEnd,sd=element.selectionDirection;
+	element.value=text.replace("!","¬").replace("&","∧").replace("|","∨").replace("¬=","≠").replace(">","→").replace("$","→").replace("@","∀").replace("#","∃").replace(">","→").replace(":","↔");
+	element.selectionStart=ss;
+	element.selectionEnd=se;
+	element.selectionDirection=sd;
+}
+
+function evalAtomic(name,args){
+	switch (name){
+		case "Tet":
+		case "Cube":
+		case "Dodec":
+		case "Small":
+		case "Medium":
+		case "Large":
+		if (args.length!=1||!labels[args[0]]) return -1;
+		else return atomics[name](labels[args[0]]);
+		break;
+		case "SameShape":
+		case "SameSize":
+		case "LeftOf":
+		case "RightOf":
+		case "FrontOf":
+		case "BackOf":
+		case "SameCol":
+		case "SameRow":
+		case "Adjoins":
+		case "Smaller":
+		case "Larger":
+		if (args.length!=2||!labels[args[0]]||!labels[args[1]]) return -1;
+		else return atomics[name](labels[args[0]],labels[args[1]]);
+		break;
+		case "Between":
+		if (args.length!=3||!labels[args[0]]||!labels[args[1]]||!labels[args[2]]) return -1;
+		else return atomics[name](labels[args[0]],labels[args[1]],labels[args[2]]);
+		break;
+	}
+}
+
+var parse={
+	sub:function(text){
+		if (text[0]!="(") return {length:0,correct:false,value:false};
+		var a=parse.or(text.substr(1));
+		return{
+			val:a.val,
+			length:a.length+2,
+			correct:a.correct&&text[a.length+1]==")"
+		};
+	},
+	letter:function(text){
+		var cc=(text.toUpperCase()).charCodeAt(i);
+		return (cc>=65&&cc<91)?text[0]:"";
+	},
+	text:function(text){
+		var val=parse.letter(text);
+		if (val){
+			var b=parse.text(text.substr(1));
+			val+=b;
+		}
+		return val;
+	},
+	variable:function(text){
+		var a=parse.text(text);
+		var name=a;
+		var l=a.length;
+		var val=labels[name];
+		if (val) var correct=l?true:false;
+		else var correct=false;
+		return {
+			correct:correct,
+			val:val,
+			length:l
+		};
+	},
+	arguments:function(text){
+		var a=parse.text(text);
+		var l=a.length;
+		var correct=l?true:false;
+		var val=[a];
+		if (text[l]==","){
+			l++;
+			var b=parse.arguments(text.substr(l));
+			correct=correct&&b.correct;
+			val=val.concat(b.val);
+			l+=b.length;
+		}
+		return {
+			correct:correct,
+			val:val,
+			length:l
+		};
+	},
+	atomic:function(text){
+		var a=parse.text(text);
+		var l=a.length,name=a,correct,val=0;
+		if (!l||text[l++]!="(") correct=false;
+		else {
+			var b=parse.arguments(text.substr(l));
+			l+=b.length;
+			val=evalAtomic(name,b.val);
+			correct=(val>=0&&b.correct&&text[l++]==")");
+		}
+		return {
+			length:l,
+			correct:correct,
+			val:val
+		};
+	},
+	equation:function(text){
+		var a=parse.variable(text);
+		var l=a.length,correct=a.correct,val;
+		if (text.charAt(l)=="="){
+			var b=parse.variable(text.substr(++l));
+			l+=b.length;
+			correct=correct&&b.correct;
+			val=a.val==b.val;
+		}else if (text.charAt(l)=="≠"){
+			var b=parse.variable(text.substr(++l));
+			l+=b.length;
+			correct=correct&&b.correct;
+			val=a.val!=b.val;
+		}else
+			correct=false;
+		return{
+			length:l,
+			val:val,
+			correct:correct
+		};
+	},
+	quanti:function(text){
+		var mode;
+		if (text[0]=="∀"){
+			mode=1;
+		}else if (text[0]=="∃"){
+			mode=0;
+		}else return {correct:false,val:0,len:0};
+		var varname=parse.letter(text.substr(1))
+		if (!varname) return {correct:false,val:0,len:0};
+		var correct=true,val=mode;
+		for (var i=0;i<things.length;i++){
+			labels[varname]=things[i];
+			var a=parse.base(text.substr(2));
+			console.log(a.correct);
+			correct==correct&&a.correct;
+			val=mode?val&&a.val:val||a.val;
+		}
+		console.log(correct);
+		labels[varname]=undefined;
+		return {
+			val:val,
+			length:a.length+2,
+			correct:correct
+		};
+	},
+	base:function(text){
+		var a;
+		a=parse.atomic(text);
+		if (!a.correct)
+		a=parse.equation(text);
+		if (!a.correct)
+		a=parse.quanti(text);
+		if (!a.correct)
+		a=parse.sub(text);
+		return a;
+	},
+	negation:function(text){
+		var negate=false,l=0;
+		if (text[0]=="¬") {
+			negate=true;
+			l++;
+		}
+		var a=parse.base(text.substr(l));
+		return{
+			length:l+a.length,
+			val:negate?!a.val:a.val,
+			correct:a.correct
+		};
+	},
+	implication:function(text){
+		var a=parse.negation(text);
+		var l=a.length,correct=a.correct,val=a.val;
+		if (text.charAt(l)=="→"){
+			var mode=0;
+		}else if (text.charAt(l)=="↔"){
+			var mode=1;
+		}else return a;
+		var b=parse.and(text.substr(++l));
+		l+=b.length;
+		correct=correct&&b.correct;
+		if (mode)
+			val=val?b.val:!b.val;
+		else
+			val=!val||b.val;
+		return{
+			length:l,
+			val:val,
+			correct:correct
+		};
+	},
+	and:function(text){
+		var a=parse.implication(text);
+		var l=a.length,correct=a.correct,val=a.val;
+		if (text.charAt(l)=="∧"){
+			var b=parse.and(text.substr(++l));
+			l+=b.length;
+			correct=correct&&b.correct;
+			val=val&&b.val;
+		}
+		return{
+			length:l,
+			val:val,
+			correct:correct
+		};
+	},
+	or:function(text){
+		var a=parse.and(text);
+		var l=a.length,correct=a.correct,val=a.val;
+		if (text.charAt(l)=="∨"){
+			var b=parse.or(text.substr(++l));
+			l+=b.length;
+			correct=correct&&b.correct;
+			val=val||b.val;
+		}
+		return{
+			length:l,
+			val:val,
+			correct:correct
+		};
+	},
+	sentence:function(text){
+		var a=parse.or(text.replace(" ",""));
+		if (!a.correct||a.length!=text.length){
+			return -1;
+		}
+		return a.val;
+	}
+}
+
+var atomics={
+	Tet:function(x){return x.shape=="tet";},
+	Cube:function(x){return x.shape=="cube";},
+	Dodec:function(x){return x.shape=="dodec";},
+	SameShape:function(x,y){return x.shape==y.shape;},
+
+	Small:function(x){return x.size=="small";},
+	Medium:function(x){return x.size=="medium";},
+	Large:function(x){return x.size=="large";},
+	SameSize:function(x,y){return x.size==y.size;},
+
+	LeftOf:function(left,right){return left.x<right.x;},
+	RightOf:function(right,left){return left.x<right.x;},
+	FrontOf:function(front,back){return front.y>back.y;},
+	BackOf:function(back,front){return front.y>back.y;},
+
+	SameCol:function(a,b){return a.x==b.x;},
+	SameRow:function(a,b){return a.y==b.y;},
+	Between:function(middle,a,b){
+		function sameDiag(a,b){
+			return Math.abs(a.x-b.x)==Math.abs(a.y-b.y);
+		}
+		function onSameLine(a,b,c){
+			return (a.x==b.x&&a.x==c.x)||(a.y==b.y&&a.y==c.y)||(sameDiag(a,b)&&sameDiag(a,c));
+		}
+		return ((middle.x>Math.min(a.x,b.x)&&middle.x<Math.max(a.x,b.x))||(middle.y>Math.min(a.y,b.y)&&middle.y<Math.max(a.y,b.y)))&&onSameLine(middle,a,b);
+	},
+	Adjoins:function(a,b){return ((abs(a.x-b.x)+abs(a.y-b.y))==1);},
+	
+	Smaller:function(smaller,larger){return translate.sizeToNum[smaller.size]<translate.sizeToNum[larger.size];},
+	Larger:function(larger,smaller){return translate.sizeToNum[smaller.size]<translate.sizeToNum[larger.size];}
+};
+
+
+function verify(text){
+	
+	/*function Tet(x){return x.shape=="tet";}
+	function Cube(x){return x.shape=="cube";}
+	function Dodec(x){return x.shape=="dodec";}
+	function SameShape(x,y){return x.shape==y.shape;}
+
+	function Small(x){return x.size=="small";}
+	function Medium(x){return x.size=="medium";}
+	function Large(x){return x.size=="large";}
+	function SameSize(x,y){return x.size==y.size;}
+
+	function LeftOf(left,right){return left.x<right.x;}
+	function RightOf(right,left){return left.x<right.x;}
+	function FrontOf(front,back){return front.y>back.y;}
+	function BackOf(back,front){return front.y>back.y;}
+
+	function SameCol(a,b){return a.x==b.x;}
+	function SameRow(a,b){return a.y==b.y;}
+	function Between(middle,a,b){
+		function sameDiag(a,b){
+			return Math.abs(a.x-b.x)==Math.abs(a.y-b.y);
+		}
+		function onSameLine(a,b,c){
+			return (a.x==b.x&&a.x==c.x)||(a.y==b.y&&a.y==c.y)||(sameDiag(a,b)&&sameDiag(a,c));
+		}
+		//console.log(onSameLine(middle,a,b));
+		return ((middle.x>Math.min(a.x,b.x)&&middle.x<Math.max(a.x,b.x))||(middle.y>Math.min(a.y,b.y)&&middle.y<Math.max(a.y,b.y)))&&onSameLine(middle,a,b);
+	}
+	function Adjoins(a,b){return ((abs(a.x-b.x)+abs(a.y-b.y))==1);}
+	
+	function Smaller(smaller,larger){return translate.sizeToNum[smaller.size]<translate.sizeToNum[larger.size];}
+	function Larger(larger,smaller){return translate.sizeToNum[smaller.size]<translate.sizeToNum[larger.size];}
+	
+	var a=labels.a,b=labels.b,c=labels.c,d=labels.d,e=labels.d,f=labels.f;
+	
+	text=text.replace(/¬/g,"!").replace(/∧/g,"&&").replace(/∨/g,"||").replace(/=/g,"==").replace(/≠/g,"!=");
+	return eval(text);
+	*/
+	
+	var a=text.indexOf(";"),b;
+	while(a>=0){
+		b=text.substr(a).indexOf("\n");
+		if (b<0) b=text.length-a;
+		text=text.substr(0,a).concat(text.substr(b+1));
+	}
+	text=text.replace(/ /g,"").replace(/\n/g,"");
+	return parse.sentence(text);
+	
+
+}
+
+function verifySentence(element){
+	var txt=element.getElementsByTagName("textarea")[0].value;
+	var ans=verify(txt);
+	if (ans<0)
+		element.getElementsByTagName("span")[0].innerHTML="*";
+	else
+		element.getElementsByTagName("span")[0].innerHTML=ans?"T":"F";
+	
+}
+
+function verifyAllSentences(list){
+	var l=list.getElementsByTagName("li");
+	for (var i=0;i<l.length;i++){
+		verifySentence(l[i]);
+	}
+}
+
+
+function addSentence(list,text){
+	var node=document.createElement("li");
+	if (text)
+		node.innerHTML='<span width=10></span><textarea onkeyup="setSigns(event)" cols=80>'+text+'</textarea> <button onclick="verifySentence(this.parentNode)">Verify</button>';
+	else
+		node.innerHTML='<span width=10></span><textarea size=300 onkeyup="setSigns(event)" cols=80></textarea> <button onclick="verifySentence(this.parentNode)">Verify</button>';
+	list.appendChild(node);
+}
+
+function loadSentences(text,list){
+	text=text.replace(/$/g,"→").replace(/~/g,"¬").replace(/&/g,"∧").replace(/%/g,"↔").replace(/|/g,"∨").replace(/#/g,"≠").replace(/\//g,"∃").replace(/@/g,"∀");
+	var sen=text.split("");
+	for (var i=0;i<sen.length;i++){
+		addSentence(list,sen[i]);
+	};
+}
+
+
+		</script>
+	</head>
+	<body onload="main()">
+		<div id="drawing">
+			<canvas id="canvas" onmousedown="fieldClick(event)" style="float:left;">
+			</canvas>
+			<form>
+				Size:<br />
+				<input type="radio" name="size" id="small" onclick="selected.setSize('small');">Small</input><br />
+				<input type="radio" name="size" id="medium" onclick="selected.setSize('medium');">Medium</input><br />
+				<input type="radio" name="size" id="large" onclick="selected.setSize('large');">Large</input><br />
+			</form>
+			<br />
+			<form>
+				Shape:<br />
+				<input type="radio" name="shape" id="cube" onclick="selected.setShape('cube');">Cube</input><br />
+				<input type="radio" name="shape" id="tet" onclick="selected.setShape('tet');">Tet</input><br />
+				<input type="radio" name="shape" id="dodec" onclick="selected.setShape('dodec');">Dodec</input><br />
+			</form>
+			<br />
+			<form>
+				Labels:<br />
+				<input type="checkbox" name="label" class="label" id="a" onclick="selected.label('a');">a</input> 
+				<input type="checkbox" name="label" class="label" id="b" onclick="selected.label('b');">b</input> 
+				<input type="checkbox" name="label" class="label" id="c" onclick="selected.label('c');">c</input> 
+				<input type="checkbox" name="label" class="label" id="d" onclick="selected.label('d');">d</input> 
+				<input type="checkbox" name="label" class="label" id="e" onclick="selected.label('e');">e</input> 
+				<input type="checkbox" name="label" class="label" id="f" onclick="selected.label('f');">f</input> 
+			</form>
+			<br />
+			<button onclick="addThing(field,things)">Add new thing</button><br />
+			<button onclick="selected.delete()">Remove</button><br />
+		</div>
+		<div style="clear:both"><br /></div>
+		<div id="sentences" style="clear:left;float:left;outline:1px solid black;width:780px">
+			<br />
+			<ol>
+				<button onclick="addSentence(this.parentNode)">Add new sentence</button>
+				<button onclick="verifyAllSentences(this.parentNode)">Verify all</button>
+				<li>
+					<span width=10>
+					</span>
+					<textarea size=300 onkeyup="setSigns(event)" cols=80>Cube(c)∧Between(a,b,c)</textarea>
+					<button onclick="verifySentence(this.parentNode)">Verify</button>
+				</li>
+			</ol>
+			
+		</div>
+		<div id="description" style="margin-left:800px">
+		 This is supposed to be an alternative to Tarski's world.<br />
+		 The possible atomic sentences are:
+		<ul style="clear:right;">
+			<div style="float:left;margin-right:25px;">
+				<li>Tet</li>
+				<li>Cube</li>
+				<li>Dodec</li>
+				<li>SameShape</li>
+			</div>
+			<div style="float:left;margin-right:25px;">
+				<li>Small</li>
+				<li>Medium</li>
+				<li>Large</li>
+				<li>SameSize</li>
+			</div>
+			<div style="float:left;margin-right:25px;">
+				<li>LeftOf</li>
+				<li>RightOf</li>
+				<li>FrontOf</li>
+				<li>BackOf</li>
+			</div>
+			<div style="float:left;margin-right:25px;">
+				<li>SameRow</li>
+				<li>SameCol</li>
+				<li>Between</li>
+				<li>Adjoins</li>
+			</div>
+			<div style="">
+				<li>Smaller</li>
+				<li>Larger</li>
+			</div>
+		</ul>
+		<br />
+		<p style="">
+			To get ¬, type !<br />
+			To get ∧, type &<br />
+			To get ∨, type |<br />
+			To get ≠, put = behind ¬<br />
+			To get →, type > or $<br />
+			To get ↔, type :<br />
+			To get ∀, type @<br />
+			To get ∃, type #<br />
+			∀ and ∃ should be followed by a one character long name.<br />
+			<br />
+			If you click verify you get T, F or *.<br />
+			* means that you either made a syntax error or that you refer to an unknown/unused name.
+		</p>
+		</div>
+	</body>
+</html>
+
+

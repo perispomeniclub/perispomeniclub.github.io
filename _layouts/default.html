@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <meta charset="UTF-8">
+  <title>{{ page.title }}</title>
+  <meta name="viewport" content="width=device-width">
+
+  <!--[if lt IE 9]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link rel="stylesheet" href="//code.cdn.mozilla.net/fonts/fira.css">
+  <link href="/assets/css/style.css" rel="stylesheet" />
+  <link href="/assets/css/colors-dark.css" rel="stylesheet" />
+
+</head>
+
+<body>
+
+
+
+  <header id="header">
+    <h1><a href="/">{{ site.name }}</a></h1>
+    <p>{{ site.description }}</p>
+<pre class="highlight">
+<code>
+   ___________________________________________
+  / Hi there! perispomeni.club is now closed / 
+ /         Welcome to the archive.          /
+/_  _________   ___________________________/
+  \/  .--.   |V|
+   \ /    \ _| /
+     q .. p \ /
+      \--/  //
+jgs  __||__//
+    /.    _/
+   // \  /
+  //   ||
+  \\  /  \
+   )\|    |
+  / || || |
+  |/\| || |
+     | || |
+     \ || /
+   __/ || \__
+  \____/\____/
+</code>
+</pre>
+  </header>
+
+
+
+  <div id="page">
+    <div id="sidebar">
+        <p><a href="/faq">FAQ</a></p>
+        <p><a href="/tilde.24h.html">What's up today?</a></p>
+        <br><br>
+        <h2>donate</h2>
+        <p>Paying for the server and backups costs money. If this site is of 
+        any value to you, consider making a donation by <a href="https://www.patreon.com/tsangiotis">becoming a Patron.</a></p>
+        <hr>
+        <p><small><a href="/invoices"><i>list of previous payments</i></a></small></p>
+        <br><br>
+        <h2>users</h2>
+        <ul>
+          <li><a href="/~akalipetis">~akalipetis</a></li>
+          <li><a href="/~apas">~apas</a></li>
+          <li><a href="/~archer">~archer</a></li>
+          <li><a href="/~awanhitam">~awanhitam</a></li>
+          <li><a href="/~bazinga">~bazinga</a></li>
+          <li><a href="/~bill93">~bill93</a></li>
+          <li><a href="/~bob">~bob</a></li>
+          <li><a href="/~ebal">~ebal</a></li>
+          <li><a href="/~emdim">~emdim</a></li>
+          <li><a href="/~foo">~foo</a></li>
+          <li><a href="/~greymtr">~greymtr</a></li>
+          <li><a href="/~ioprev">~ioprev</a></li>
+          <li><a href="/~johnblood">~johnblood</a></li>
+          <li><a href="/~khuxkm">~khuxkm</a></li>
+          <li><a href="/~ldkge">~ldkge</a></li>
+          <li><a href="/~mushmouth">~mushmouth</a></li>
+          <li><a href="/~neck_black">~neck_black</a></li>
+          <li><a href="/~paidakios">~paidakios</a></li>
+          <li><a href="/~pallas">~pallas</a></li>
+          <li><a href="/~pavlos">~pavlos</a></li>
+          <li><a href="/~perito">~perito</a></li>
+          <li><a href="/~resura">~resura</a></li>
+          <li><a href="/~snkx">~snkx</a></li>
+          <li><a href="/~subject17">~subject17</a></li>
+          <li><a href="/~tex">~tex</a></li>
+          <li><a href="/~troido">~troido</a></li>
+          <li><a href="/~tsangiotis"><strong>~tsangiotis</strong></a></li>
+          <li><a href="/~vatsamanis">~vatsamanis</a></li>
+        </ul>
+    </div>
+
+
+
+    <div id="content">
+      {{ content }}
+    </div>
+
+
+
+  </div>
+
+
+
+  <footer id="footer">
+    <p class="copyright">Copyright &copy; {{ site.time | date: '%Y' }} {{ site.name }}. Powered by <a href="http://jekyllrb.com">Jekyll</a>, theme by <a href="http://www.webmaster-source.com">Matt Harzewski</a></p>
+  </footer>
+
+
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+  <script src="/assets/js/jquery.mobilemenu.min.js"></script>
+
+  <script>
+    $(document).ready(function(){
+      $('#sidebar nav ul').mobileMenu({'topOptionText': 'Menu', 'prependTo': '#sidebar nav'});
+    });
+  </script>
+
+
+
+</body>
+</html>

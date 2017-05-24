@@ -1,0 +1,39 @@
+<html>
+<head>
+<style type="text/css">
+body {
+margin-left:100px;
+margin-top:100px;
+}
+p {
+display:inline;
+}
+#playfield {
+white-space:pre;
+font:10px courrier, sans-serif;
+}
+</style>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="math_functions.js" ></script>
+<script type="text/javascript" src="3d.js" ></script>
+
+</head>
+<body onload="start()" onkeypress="update(event)">
+
+<canvas id="canvas" width="400" height="400">
+Your browser doesn't support the canvas element.
+</canvas>
+
+<canvas id="canvas2" width="400" height="400">
+Your browser doesn't support the canvas element.
+</canvas>
+<br />
+
+<div id="playfield">
+</div>
+<button onclick="enableDOM(!DOMenabled)">
+Enable/disable DOM playfield
+</button>
+
+</body>
+</html>

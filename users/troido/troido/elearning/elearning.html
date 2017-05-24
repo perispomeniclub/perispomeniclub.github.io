@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script>
+function isNumber(str,i){
+	c=str.charCodeAt(i);
+	return (c>=48&&c<58);
+}
+
+function parseSign(str,cnt){
+	if (str.charAt(cnt)=="-"){
+		return 1;
+	}
+	return 0;
+}
+
+function parseNumber(str,cnt){
+	if (!isNumber(str,cnt)) return 0;
+	var strAns,len=0,ans,i,leading0s=0,tailing0s=0;
+	do {
+		len++;
+	}while (cnt+len<str.length&&isNumber(str,cnt+len));
+	strAns=str.slice(cnt,cnt+len);
+	ans=parseInt(strAns);
+	
+	i=cnt;
+	while(str.charAt(i)=='0'){
+		i++;
+		leading0s++;
+	}
+	
+	i=cnt+len;
+	while(i>=cnt&&str.charAt(i)=='0'){
+		i--
+		tailing0s++;
+	}
+	return {ans:ans,
+		strAns:strAns,
+		length:len,
+		leading0s:leading0s,
+		tailing0s:tailing0s,
+		cnt:cnt
+	};
+}
+
+function parsePeriod(str,cnt){
+	chr=str.charAt(cnt);
+	if (chr!=','&&chr!='.') return 0;
+	return chr;
+}
+
+function parseDecimal(str,cnt){
+	var len=0;
+	var hasSign=parseSign(str,cnt);
+	if (hasSign) len++;
+	
+	var iPart=parseNumber(str,cnt+len);
+	if (iPart) len+=iPart.length;
+	else return 0;
+	var tailing0s=iPart.tailing0s, iAns=iPart.ans, nums=iPart.length;
+	
+	periodType=parsePeriod(str,cnt+len)
+	if (periodType){
+		len++;
+		fPart=parseNumber(str,cnt+len);
+		if (fPart) len+=fPart.length;
+		else return 0;
+		tailing0s=fPart.tailing0s;
+		for (var i=0;i<fPart.length;i++){
+			iAns*=10;
+		}
+		iAns+=fPart.ans;
+		nums+=fPart.length;
+	}
+	return {iAns:iAns,
+		sAns:hasSign?-iAns:iAns,
+		nums:nums-iPart.leading0s,
+		periodPlace:iPart.length,
+		leading0s:iPart.leading0s,
+		tailing0s:tailing0s,
+		periodType:periodType,
+		hasSign:hasSign,
+		length:len
+	};
+}
+
+function parseExponential(str,cnt){
+	var len=0;
+	var sign="";
+	switch (str.charAt(cnt)){
+		case '*':
+		if (str.slice(cnt,cnt+4)=="*10^"){
+			len+=3;
+			sign+="*10";
+		} else return 0;
+		case 'E':
+		case 'e':
+		case '$':
+			sign+=str.charAt(cnt+len);
+			len++;
+			expo=parseDecimal(str,cnt+len);
+			break;
+		default:
+			return 0;
+	}
+	if (!expo||expo.periodType) return 0;
+	return {val:expo.iAns,
+		sVal:expo.sAns,
+		leading0s:expo.leading0s,
+		hasSign:expo.hasSign,
+		sign:sign,
+		length:len+expo.length
+	};
+}
+
+function parseReal(str,cnt){
+	var len=0;
+	var dPart=parseDecimal(str,cnt)
+	if (dPart) len+=dPart.length;
+	else return 0;
+	var exponent=dPart.periodPlace-dPart.nums;
+	
+	var xPart=parseExponential(str,cnt+len);
+	if (xPart) {
+		exponent+=xPart.sVal;
+		len+=xPart.length;
+	}
+	return {
+		iVal:dPart.sAns,
+		exponent:exponent,
+		exponential:(xPart||0),
+		decimal:dPart,
+		length:len
+	};
+}
+
+function isLetter(str,i){
+	var cc=(str.toUpperCase()).charCodeAt(i);
+	return (cc>=65&&cc<91);
+}
+
+function parseText(str,cnt){
+	var len=0;
+	while (isLetter(str,cnt+len)){
+		len++
+	}
+	var txt=str.slice(cnt,cnt+len)
+	return {val:txt,length:len};
+}
+
+function parseUnit(str,cnt,divided){
+	var len=0, expon=1;
+	var txt=parseText(str,cnt);
+	if (txt) len+=txt.length;
+	else return 0;
+	
+	if (str.charAt(cnt+len)=="^"){
+		len++;
+		
+		xPart=parseDecimal(str,cnt+len);
+		if (!xPart||xPart.periodType) return 0;
+		else len+=xPart.length;
+		console.log(xPart);
+		expon=xPart.sAns;
+	}
+	if (divided) expon=-expon;
+	return {name:txt.val,exp:expon,length:len};
+}
+
+function parseUnits(str,cnt,divided){
+	if (!isLetter(str,cnt)) return 0;
+	var len=0;
+	var unit=parseUnit(str,cnt,divided);
+	if (unit) len+=unit.length;
+	else return 0;
+	
+	var arr=[{name:unit.name,exp:unit.exp,div:divided}];
+	
+	if (str.charAt(cnt+len)=='*'||str.charAt(cnt+len)=='/'){
+		var d=0;
+		if (str.charAt(cnt+len)=='/') d=1;
+		len++;
+		var units=parseUnits(str,cnt+len,d);
+		if (units){
+			return {val:arr.concat(units.val),length:len+units.length};
+		}
+		else return 0;
+	}
+	return {val:arr,length:len};
+}
+
+function parseAnswer(str){
+	len=0;
+	var val = parseReal(str,0);
+	if (val) len+=val.length;
+	var unit = parseUnits(str,len,0);
+	if (unit) len+=unit.length;
+	return {value:val,unit:unit,remaining:str.slice(len,str.length),length:len};
+	//finishText(str,{c:cnt});
+}
+
+function showAnswer(ans){
+	var txt="";
+	if (ans.value){
+		txt+="Ingevoerde waarde (in soort van macht notatie): "+ans.value.iVal+"*10^"+ans.value.exponent+"\n";
+		txt+="Gebruikte notatie: ";
+		if (ans.value.exponential) txt+="machtnotatie";
+		else txt+="zonder macht";
+		txt+="\nGebruikt teken voor decimalen: ";
+		if(ans.value.decimal.periodType) txt+=ans.value.decimal.periodType
+		else txt+="geen";
+		txt+="\nAantal significante cijfers: "+ans.value.decimal.nums+"\nAantal cijfers voor de komma: "+ans.value.decimal.periodPlace+"\n";
+		if (ans.value.exponential){
+			txt+="Genoteerde exponent: "+ans.value.exponential.sVal+"\n";
+			txt+="gebruikt teken voor exponent: "+ans.value.exponential.sign+"\n";
+		}
+	} else txt+="Geen waarde ingevoerd\n";
+	
+	if (ans.unit){
+		txt+="\nEenheid:  "
+		for (var i=0;i<ans.unit.val.length;i++){
+			if (i) txt+=" * ";
+			txt+=ans.unit.val[i].name+"^"+ans.unit.val[i].exp;
+		}
+		txt+="\n";
+	} else txt+="\nGeen eenheid ingevoerd\n";
+	
+	if (ans.remaining){
+		txt+="\nOverblijvende text: "+ans.remaining;
+	}
+	
+	alert(txt);
+}
+
+function getAnswer(){
+	var str= prompt("type het anwoord hier","");
+	var ans=parseAnswer(str.replace(" ",""));
+	showAnswer(ans);
+	console.log(ans);
+}
+
+</script>
+</head>
+<body>
+<button onclick='getAnswer()'>geef antwoord</button>
+</body>
+</html>

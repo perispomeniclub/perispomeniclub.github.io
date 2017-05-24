@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+
+var playfield=[];
+for (var a=0;a<9;a+=1)
+	playfield[a]=[0,0,0,0,0 ,0,0,0,0]
+// both dimensions must have the same length
+var selector = {x:0,y:0,selecting:0}
+
+
+function fillField(array){
+	for (var a=0;a<array.length;a++){
+		for (var b=0;b<array[a].length;b++){
+			if (inField(array,a,b)){
+				array[a][b]=Math.ceil(Math.random()*7);
+			} else
+				array[a][b]=0;
+		}
+	}
+}
+
+function inField(array,x,y){
+	var a=array.length;
+	return (y<x+a/2)*(y>x-a/2);
+}
+
+function isNext(x1,y1,x2,y2){
+	var a=x2-x1;
+	var b=y2-y1;
+	if ( (a==b&&(a==1||a==-1))||(a==0&&(b==1||b==-1))||(b==0&&(a==1||a==-1)) )
+		return 1;
+	else
+		return 0;
+}
+
+function drawField(array){
+	var text="";
+	for (var a=0;a<array.length;a++){
+		for (var b=0;b<array[a].length;b++){
+			if (inField(array,a,b))
+				text+="<span onclick='select("+a+","+b+")' id='cel"+a+b+"'>_"+array[a][b]+"_</span>";
+		}
+		text+="<br />";
+	}	
+	document.getElementById("playfield").innerHTML=text;
+}
+
+function setCellText(x,y,text) {document.getElementById("cel"+x+""+y).innerHTML=text;}
+
+function getCell(x,y) {return playfield[x][y];}
+
+function setCell(x,y,val) {playfield[x][y]=val;}
+
+function changeCells(x1,y1,x2,y2) {var a=getCell(x1,y1); setCell(x1,y1,getCell(x2,y2)); setCell(x2,y2,a);}
+
+function setMark(x,y,string) {	setCellText(x,y,string+getCell(x,y)+string);}
+
+/*function checkshape(){
+var d=[]
+var e=[]
+	for (var a=0;a<playfield.length;a++){
+		for (var b=0;b<playfield.length;b++){
+			if (inField(playfield,a,b))
+				var c=getCell(a,b)
+				if (getCell(a,b+1)==c && getCell(a+1,b+1))
+					d[d.length]={x:a,y:b}
+				
+				if (getCell(a+1,b)==c && getCell(a+1,b+1))
+					e[e.length]={x:a,y:b}
+
+*/
+
+function select(x,y){
+	setMark(selector.x,selector.y,"_");
+	if (selector.selecting && isNext(x,y,selector.x,selector.y)) {
+		changeCells(selector.x,selector.y,x,y);
+		setMark(x,y,"_");
+		setMark(selector.x,selector.y,"_");
+		selector.selecting=0;
+	} else {
+		setMark(x,y,"-");
+		selector.selecting=1;
+	}
+	selector.x=x;
+	selector.y=y;
+
+}
+
+function update(){
+	fillField(playfield)
+	drawField(playfield)
+}
+
+
+</script>
+</head>
+<body onload="update()">
+<p id="playfield" style="text-align:center">
+hi
+<p>
+</body>
+</html>

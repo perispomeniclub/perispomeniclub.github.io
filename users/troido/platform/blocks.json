@@ -1,0 +1,154 @@
+{
+	"textures":{
+		"sprites": "textures2.json",
+		"images": [
+			"images.png",
+			"images2.png"
+		]
+	},
+	
+	"layers":[
+		{
+			"type":"background",
+			"map":"clouds.png",
+			"dynamic": false,
+			"depth":4,
+			"scale":32,
+			"sprites":{
+				"0x606060":"cloud"
+			}
+		},
+		{
+			"type":"background",
+			"map":"background.png",
+			"dynamic": false,
+			"depth":1.5,
+			"scale":32,
+			"sprites":{
+				"0x00ff00":"grass",
+				"0x606060":"stone"
+			}
+		},
+		{
+			"type": "game",
+			"map": "testmap3.png",
+			"main": true,
+			"dynamic": true,
+			"depth":1,
+			"scale":32,
+			"blocks":{
+				"0x0000ff":[
+					"Player"
+				],
+				"0x606060":[
+					"Stone"
+				],
+				"0x705000":[
+					"Ground"
+				],
+				"0x606000":[
+					"Grass"
+				],
+				"0xd0d0d0":[
+					"Block"
+				],
+				"0x603000":[
+					"TreeStem"
+				],
+				"0x604000":[
+					"TreeBranch"
+				],
+				"0x008000":[
+					"Leaves"
+				],
+				"0x308030":[
+					"Leaves"
+				],
+				"0xff0000":[
+					"Fire"
+				],
+				"0x00ff00":[
+					"Bush"
+				],
+				"0xff00f0":[
+					"GnomeDoor"
+				],
+				"0x00ffff":[
+					"Gnome"
+				],
+				"0x10ffff":[
+					"Goblin"
+				]
+			},
+			"sublayers":[
+				{
+					"type": "spritemap",
+					"dynamic": false,
+					"sprites": {
+						"TreeStem": "treeStem",
+						"TreeBranch": "treeBranch"
+					}
+				},
+				{
+					"type": "spritemap",
+					"dynamic": false,
+					"sprites": {
+						"Leaves": "leaves"
+					}
+				},
+				{
+					"type": "spritemap",
+					"dynamic": false,
+					"sprites": {
+						"Stone": "black",
+						"Ground": "black",
+						"Grass": "black",
+						"GnomeDoor": "black"
+					}
+				},
+				{
+					"type": "spritemap",
+					"dynamic": true,
+					"sprites": {
+						"Player": "player",
+						"Gnome": "gnomeLeft",
+						"Goblin": "goblinRight"
+					}
+				},
+				{
+					"type": "objmap",
+					"dynamic": false,
+					"objects": {
+						"Stone": "StoneOverlay",
+						"Ground": "GroundOverlay",
+						"Grass": "GroundOverlay",
+						"GnomeDoor": "GroundOverlay"
+					}
+				},
+				{
+					"type": "objmap",
+					"dynamic": false,
+					"objects": {
+						"GnomeDoor": "GnomeDoorOverlay"
+					}
+				},
+				{
+					"type": "objmap",
+					"dynamic": false,
+					"objects": {
+						"Grass": "GrassOverlay",
+						"GnomeDoor": "GrassOverlay"
+					}
+				},
+				{
+					"type": "spritemap",
+					"dynamic": false,
+					"sprites": {
+						"Bush": "bush",
+						"Fire": "fire"
+					}
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="gmlcompiler.js"></script>
+<script >
+var interf={
+	getText:function(){
+		return document.getElementById("code").value;
+	},
+	printText:function(text){
+		console.log(text);
+	},
+	parse:function(){
+		this.printText(compiler.translate(this.getText()));
+	}
+}
+
+</script>
+</head>
+<body>
+<textarea id='code' width=500 height=500>
+</textarea>
+<button onclick='interf.parse()'>translate</button>
+</body>
+</html>

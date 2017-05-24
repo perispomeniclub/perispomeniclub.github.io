@@ -1,0 +1,234 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<style type="text/css">
+body{min-width:600;}
+canvas{
+ outline:1px solid black;
+}
+//#container{clear:both;}
+#timer{margin-left:80px;position:absolute ;}
+</style>
+<script src="../jslibs/function grid.js"></script>
+<script src="../jslibs/function timer.js"></script>
+<script>
+
+var canvas,ctx,unfound,scl=16,f,mode=0,dead=0,toGo,left,ne={w:9,h:9,m:10,t:0},timer;
+ 
+onload=function (){
+ canvas=document.getElementById("canvas");
+ canvas.onclick=fieldClick;
+ ctx=canvas.getContext("2d");
+ unfound=document.getElementById("unfound");
+ start(ne.w,ne.h,ne.m,ne.t);
+}
+
+function fieldClick(e){
+ var layerX=e.clientX-canvas.offsetLeft+pageXOffset,
+  layerY=e.clientY-canvas.offsetTop+pageYOffset,
+  x=Math.floor((layerX-(f.t>=6)*layerY/2)/scl),
+  y=Math.floor((layerY)/scl);
+ update(x,y,e.button);
+}
+
+function create(width,height,type){
+ var field=new Grid({width:width,height:height});
+  field.fillFn(function(i,j){
+   return {
+    mines:0,
+    visible:0,
+    marked:0,
+    x:i,
+    y:j
+   };
+  });
+ field.w=width;
+ field.h=height;
+ field.t=type;
+ return field;
+}
+
+
+function fill(f,mines){
+ toGo=f.w*f.h-mines;
+ var i=mines;
+ while (i>0){
+  var x=Math.floor(Math.random()*f.w);
+  var y=Math.floor(Math.random()*f.h);
+  if (f.get(x,y).mines>9)
+   continue;
+  f.get(x,y).mines=10;
+  i--;
+ }
+}
+
+
+function findAround(f,x,y){
+  var a=[];
+  var b=[];
+  switch (f.t){
+   case 4:
+   b.push([-2,-2],[2,-2],[-2,2],[2,2]);
+   case 3:
+   b.push([-2,-1],[2,-1],[-2,1],[2,1],[-1,-2],[1,-2],[-1,2],[1,2]);
+   case 2:
+   b.push([0,-2],[-2,0],[2,0],[0,2]);
+   case 0:
+   b.push([-1,-1],[1,-1],[-1,1],[1,1]);
+   case 1:
+   b.push([0,-1],[-1,0],[1,0],[0,1]);
+   break;
+   case 6:
+   b.push([0,-1],[-1,0],[1,0],[0,1],[1,-1],[-1,1]);
+  }
+  for (var i=0;i<b.length;i++){
+   var c= f.get(b[i][0]+x,b[i][1]+y);
+   c&&a.push(c);
+  }
+  return a;
+}
+
+function calculate(f){
+ f.for(function (x,y,cell){
+  if (cell.mines>9)
+   return 0;
+  var a=findAround(f,x,y);
+  var n=0;
+  for (var i=0;i<a.length;i++)
+   n+=(a[i].mines>9);
+  cell.mines=n;
+ });
+}
+
+function die(){
+ timer.stop();
+ alert("BOOM!\nMorto");
+ dead=true;
+}
+
+function win(){
+ var a=timer.stop();
+ alert("You won! in "+(a/1000)+" seconds");
+}
+
+function test(){
+ function a(x){
+  var n=6;
+
+  (x&&(n=4));
+  return n;}
+ var b,c,d;
+ b={x:3,y:3}
+ alert(toGo);
+}
+
+function draw(f){
+ canvas.width=f.w*scl*(1+(f.t>=6)/2);
+ canvas.height=f.h*scl;
+ ctx.fillStyle="#ffffff";
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+ function drawchar(x,y,char){
+  if (f.t<6)
+   ctx.fillText(char,(x+0.4)*scl,(y+0.7)*scl);
+  else
+   ctx.fillText(char,(x+(f.t>=6)*y/2+0.4)*scl,(y+0.7)*scl);
+ return 1;
+ }
+ function drawborder(x,y){
+   ctx.strokeRect((x+(f.t>=6)*y/2)*scl,y*scl,scl,scl);
+ }
+ 
+ ctx.fillStyle="#000000";
+ f.for(function(x,y,c){
+  if (c.visible)
+   (c.mines>9)&&(drawchar(x,y,"X"),drawchar(x,y,"-"))||(c.mines&&drawchar(x,y,c.mines));
+  else{
+   drawborder(x,y);
+   c.marked&&(drawchar(x,y-0.1,"~"),drawchar(x,y-0.2,"~"),drawchar(x,y,"|"));
+  };
+ });
+ unfound.innerHTML=left;
+}
+
+function update(x,y,button){
+ var c=f.get(x,y);
+ if (!c||c.visible||dead)
+  return 0;
+ if (mode||button){
+   (c.marked||(c.marked=1,left--,0))&&(c.marked=0,left++);
+ } else {
+  if (c.marked) return 0;
+  (c.mines>9)&&die();
+  c.visible=1;
+  if (!c.mines){
+   var a=findAround(f,x,y);
+   for (var i=0;i<a.length;i++)
+    update(a[i].x,a[i].y,button);
+  }
+  (--toGo)<=0&&!dead&&win();
+ }
+ timer.on||timer.start();
+ draw(f);
+}
+
+function start(w,h,mines,type){
+ f=create(w,h,type);
+ fill(f,mines);
+ left=mines;
+ calculate(f);
+ dead=0;
+ draw(f);
+ timer=new Timer("timer");
+}
+</script>
+</head>
+<body>
+<p>
+<canvas id='canvas'>
+</canvas>
+<span id="timer">0</span>
+<br />
+<input type="radio" name="mode" onclick="mode=1;">mark
+</input>
+<input type="radio" name="mode" onclick="mode=0;" checked>sweep
+</input>
+<br />
+<span id="unfound"></span>
+<br />
+<button onclick="start(ne.w,ne.h,ne.m,ne.t)">restart</button>
+<!--button onclick="test()">test</button-->
+<br />
+<br />
+Difficulty:
+<br />
+<input type="radio" name="dif" onclick="ne.w=9;ne.h=9,ne.m=10" checked>Easy</input>
+<br />
+<input type="radio" name="dif" onclick="ne.w=16;ne.h=16,ne.m=40">Medium</input>
+<br />
+<input type="radio" name="dif" onclick="ne.w=30;ne.h=16,ne.m=99">Hard</input>
+<br />
+<input type="radio" name="dif" onclick="ne.w=prompt('width:','ne.w');ne.h=prompt('height:','ne.h');ne.m=prompt('mines:','ne.m');">Custom</input>
+<br />
+<br />
+Type:
+<br />
+<input type="radio" name="shape" onclick="ne.t=1;">4: Small</input>
+<br />
+<input type="radio" name="shape" onclick="ne.t=0;" checked>8: Classic</input>
+<br />
+<input type="radio" name="shape" onclick="ne.t=2;">12: Diamond</input>
+<br />
+<input type="radio" name="shape" onclick="ne.t=3;">20: Circle</input>
+<br />
+<input type="radio" name="shape" onclick="ne.t=4;">24: Big square</input>
+<br />
+<input type="radio" name="shape" onclick="ne.t=6;">6: Hexagon</input>
+<br />
+<br />
+<div id="description">
+<button onclick="alert('Minesweeper:\nTo sweep an area, click it while in sweep Mode. The goal of the game is to sweep all areas that do not have a mine. You lose when you sweep over a mine. Once you sweeped an area, the number in it will tell how many mines are in the surrounding cells. This helps you to find out where the mined are placed.\nThe mark mode is for your convenienve to mark an area where you think a mine is placed. To avoid accidental clicks, marked cells can not be swept. You can unmark a cell by clicking it again in mark mode.Right mouse button is always in mark mode.')">help</button>
+</div>
+</p>
+</body>
+</html>
+

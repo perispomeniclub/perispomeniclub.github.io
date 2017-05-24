@@ -1,0 +1,92 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<style type="text/css">
+#canvas{outline:solid 1px black;}
+</style>
+<script src="../jslibs/function grid.js">
+</script>
+<script>
+Array.prototype.shuffle=function(){
+ var a=this.concat();
+ for (var i=0;i<a.length;i++)
+  a.push(a.splice(Math.floor(Math.random()*(a.length-i)),1));
+return a;
+}
+
+
+var canvas,ctx,field,scl=20;
+
+onload=function(){
+ field=new 
+Grid({width:9,height:9,possible:function(x,y){
+  var a=[];
+  for (var i=1;i<=9;i++)
+   this.can(x,y,i)||a.push(i);
+  return a;
+ },getSquare:function(x,y){
+   x=Math.floor(x/3);
+   y=Math.floor(y/3);
+   var a=[];
+   for (var i=0;i<3;i++){
+   for (var j=0;j<3;j++){
+    a.push(this.get(i+3*x,j+3*y));
+   }}
+   return a;
+  },can:function(x,y,v){
+   var others=this.getSquare(x,y).concat(this.getLine(y),this.getCol(x)),c=0;
+   for (var i=0;i<others.length;i++)
+    others[i]==v&&c++
+   return (c);
+  }
+ });
+ canvas=document.getElementById("canvas");
+ ctx=canvas.getContext("2d");
+ start();
+}
+
+//function fill(f){
+ //var preset=f.value.concat();
+ 
+ //function set(i){return preset[i];}
+
+ function test(i,f){
+  if (i>=f.size) return 1;
+  if (f.value[i]) return test(i+1,f);
+  var x=i%f.width,y=Math.floor(i/f.width),p=f.possible(x,y).shuffle(),m=0;
+  for (var j=0;j<p.length;j++){
+   f.set(x,y,p[j]);
+   if(test(i+1,f))return 1;
+  }
+  f.set(x,y,0);
+  return 0;
+ }
+ //return test(0,f);
+ //alert(count)
+//}
+
+function filter(f){}
+
+function start(){
+ test(0,field);
+ draw();
+}
+
+function draw(){
+ canvas.width=field.width*scl;
+ canvas.height=field.height*scl;
+ function drawchar(x,y,char){
+  ctx.fillText(char,(x+0.3)*scl,(y+0.7)*scl);
+ };
+ field.for(drawchar);
+ ctx.strokeRect(3*scl,0,3*scl,9*scl);
+ ctx.strokeRect(0,3*scl,9*scl,3*scl);
+}
+
+</script>
+</head>
+<body>
+<canvas id="canvas">
+</canvas>
+</body>
+</html>

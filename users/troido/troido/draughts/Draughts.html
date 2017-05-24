@@ -1,0 +1,184 @@
+<!-- DOCTYPE HTML-->
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<script>
+var canvas,ctx,scl;
+
+onload=function(){
+	canvas=document.getElementById("canvas");
+	ctx=canvas.getContext("2d");
+	scl=40;
+
+	game.start();
+	console.log(game.onturn);
+}
+
+var field={pieces:[],width:10,height:10,
+	draw:function(){
+		for (var i=0;i<this.width;i++){
+			for (var j=0;j<this.height;j++){
+				if (this.isValid(i,j)){
+					ctx.fillStyle="gray";
+					ctx.fillRect(i*scl,j*scl,scl,scl);
+					var p=this.get(i,j)
+					if (!p) continue;
+					p.draw(i,j);
+				} else {
+					ctx.fillStyle="white";
+					ctx.fillRect(i*scl,j*scl,scl,scl);
+				}
+			}
+		}
+	},
+	isValid:function(x,y){
+		if (x<0||x>=this.width||y<0||y>=this.width) return false;
+		var a=(x+y+1)/2;
+		return (Math.floor(a)==(a));
+	},
+	get:function(x,y){
+		var a=this.w*y+Math.floor(x/2)
+		return this.pieces[a];
+	},
+	set:function(x,y,val){
+		var a=this.w*y+Math.floor(x/2)
+		this.pieces[a]=val;
+		return this.isValid(x,y);
+	},
+	init:function(){
+		this.w=(this.width/2);;
+		this.length=(this.w*this.height);
+		for (var i=0,l=this.length;i<l;i++){
+			this.pieces[i]=0;
+		}
+	},
+}
+
+field.init();
+
+function player(color,direction){
+	this.color=color;
+	this.pieces=[];
+	this.direction=direction;
+	this.canMove=1;
+	this.canJump=function(){
+		for (var i=0;i<this.pieces.length;i++)
+			if (this.pieces[i].alive&&this.pieces[i].canJump()) return 1;
+		return 0;
+	};
+}
+
+function piece(i,player){
+	player.pieces.push(this);
+	field.pieces[i]=(this);
+	this.i=i;
+	this.y=Math.floor(i/field.w);
+	this.x=(i-this.y*field.w)*2+(this.y/2==Math.floor(this.y/2))
+	this.player=player;
+	this.alive=true;
+	this.draw=function(x,y){
+		ctx.fillStyle=this.player.color;
+		ctx.beginPath();
+		ctx.arc((this.x+0.5)*scl,(this.y+0.5)*scl,scl*0.4,0,2*Math.PI)
+		ctx.fill();
+	}
+	this.select=function(x,y){game.selected=this; draw();};
+	this.canMoveTo=function(x,y){
+		var dx=x-this.x,dy=y-this.y
+		return (field.isValid(x,y)&&!field.get(x,y)&&((Math.abs(dx)==1&&(dy==this.player.direction))))
+	};
+	this.move=function(x,y){
+		var jump=this.canJumpTo(x,y);
+		if ((this.canMoveTo(x,y)&&this.player.canMove)||jump){
+			if (jump) {field.get((this.x+x)/2,(this.y+y)/2).remove(); this.player.canMove=0;this.player.jumpPiece=this}
+			field.set(this.x,this.y,0);
+			field.set(x,y,this);
+			this.x=x;
+			this.y=y;
+			this.i=field.w*y+Math.floor(x/2);
+			//console.log(this.canJump());
+			game.locked=1;
+			if (!this.canJump()||this.player.canMove)
+				game.swapturn();
+			draw();
+		}
+	}
+	this.canJumpTo=function(x,y){
+		var dx=(x-this.x)/2,dy=(y-this.y)/2;
+		return (field.isValid(x,y)&&Math.abs(dx)==1&&Math.abs(dy)==1&&field.get(this.x+dx,this.y+dy).player&&field.get(this.x+dx,this.y+dy).player!=this.player&&!field.get(x,y))
+	}
+	this.canJump=function(){ return (this.canJumpTo(this.x+2,this.y+2)||this.canJumpTo(this.x-2,this.y+2)||this.canJumpTo(this.x+2,this.y-2)||this.canJumpTo(this.x-2,this.y-2));}
+
+	this.remove=function(){this.alive=false;field.pieces[this.i]=0;draw();}
+}
+
+function draw(){
+	canvas.width=field.width*scl;
+	canvas.height=field.height*scl;
+	ctx.clearRect(0,0,canvas.width,canvas.height);
+	field.draw();
+	if (game.selected){
+		ctx.strokeStyle="red"
+		ctx.strokeRect(game.selected.x*scl,game.selected.y*scl,scl,scl)
+	}
+	Write(game.onturn.color+" is on turn");
+}
+
+function Click(e){
+	var x=Math.floor(e.layerX/scl),y=Math.floor(e.layerY/scl);
+	if (!field.isValid(x,y)&&!game.locked){
+		game.selected=undefined;
+	} else {
+	var p=field.get(x,y);
+		if (p&&p.player==game.onturn&&!game.locked)
+			p.select();
+		else {
+			if (game.selected&&game.selected.player==game.onturn)
+				game.selected.move(x,y);
+		}
+	}
+	draw();
+}
+
+function keyPress(e){
+	console.log(e.which)
+	if (e.which==46&&game.selected)
+		game.selected.remove();
+}
+
+game={selected:undefined,onturn:undefined,locked:0,
+	start:function(){
+		this.black=new player("black",-1),
+		this.white=new player("white",1);
+		for (var i=0,l=field.length-1;i<20;i++){
+			new piece(i,this.white);
+			new piece(l-i,this.black);
+		}
+		this.onturn=this.white;
+		draw();
+	},
+	swapturn:function(){
+		if (this.onturn==this.white)
+			this.onturn=this.black;
+		else this.onturn=this.white;
+		this.onturn.canMove=(!(this.onturn.canJump()));
+		this.locked=0;
+		draw();
+		console.log(this.onturn);
+	},
+}
+
+function Write(text){
+	document.getElementById("text").innerHTML=text
+}
+
+
+
+</script>
+</head>
+<body onkeydown="keyPress(event)">
+<canvas id="canvas" width="400" height="400" 
+	onmousedown="Click(event)"
+	style="border: 5px solid black;">
+</canvas>
+<span id="text">white is on turn</span>
+

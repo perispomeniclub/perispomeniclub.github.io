@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <script src="js/lib/objectassignpolyfill.js"></script>
+    <script src="js/parsequerystring.js"></script>
+    <script src="js/lib/require.js"></script>
+    <script>
+"use strict";
+
+
+const GRAPHICS_3D = QueryString['3d'];
+
+requirejs.config({
+    baseUrl: "js",
+});
+
+requirejs(["clientmain"], function(main){
+    main();
+});
+
+//     try {
+//         main();
+//     } catch (e) {
+//         try {
+//             var errorData = e+"\n";
+//             for (var i in e){
+//                 errorData += i+": "+e[i]+"\n";
+//             }
+//             alert(errorData);
+//         } catch (e) {
+//             alert(e);
+//             alert("I can't even show an error properly");
+//         }
+//     }
+// });
+
+    </script>
+    <link rel="stylesheet" type="text/css" href="css/clientnice.css">
+</head>
+<body>
+<img src="img/standart_tiles.png" id="tiles" class="resources" />
+<img src="img/objectsprites.png" id="objectsprites" class="resources" />
+<div>
+    <canvas id="canvas" width=480 height=480 class="gameview"></canvas>
+</div>
+<div class="side">
+    <div id="touchcontrols" class="touchcontrols optionareas" hidden>
+        <div class="buttonline">
+            <div id="buttonattack" class="touchbutton">ATTACK</div>
+            <div id="buttonup" class="touchbutton">FORWARD</div>
+        </div>
+        <div class="buttonline">
+            <div id="buttonleft" class="touchbutton">LEFT</div>
+            <div id="buttondown" class="touchbutton">BACK</div>
+            <div id="buttonright" class="touchbutton">RIGHT</div>
+        </div>
+    </div>
+    <button id="toggletouch" class="optionareas">Toggle touch buttons</button>
+    <div class="connectarea optionareas">
+        <form action="javascript:void(0)" id="connectform" ></form>
+        <div class="connectinput">
+            <input type="text" id="name" value="Gronald" form="connectform" class="editabletext"/>
+            <button id="randomnamebutton" autocomplete="off">Random</button>
+            <br />
+            <input type="text" id="serveraddress" value="wss://desolate-gorge.herokuapp.com" form="connectform" class="editabletext"/>
+            <button id="connectbutton" disabled form="connectform">Connect</button>
+            <button id="disconnectbutton" hidden>Disconnect</button>
+        </div>
+    </div>
+    
+    <div class="optionareas gameelement" hidden>
+        <canvas id="inventory" width=140 height=140>
+        </canvas>
+    </div>
+    <div id="interactbuttons" class="interactbuttons optionareas gameelement" hidden>
+    </div>
+    <div id="dialogarea" class="dialogarea optionareas gameelement" hidden>
+        <div id="dialogspeaker" class="dialogspeaker"></div>
+        <div id="dialogtext" class="dialogtext"></div>
+        <div id="dialogbuttons" class="dialogbuttons"></div>
+    </div>
+    <div id="chat" class="optionareas gameelement" hidden>
+        <textarea id="chatconsole" class="chatconsole" rows=8 cols=80 readonly>
+            
+        </textarea>
+        <br />
+        <form id="chatsendform" action="javascript:void(0);">
+            <input type="text" size=50 id="chatsendinput" class="editabletext"/>
+            <input type="submit" id="sendbutton" value="Send">
+        </form>
+    </div>
+    <div id="healtharea" class="healtharea optionareas gameelement" hidden>
+        Health: <span id=healthvalue></span>
+    </div>
+</div>
+</body>
+</html>

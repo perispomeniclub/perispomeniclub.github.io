@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><title>CSS3D 3rd person</title>
+<style>
+body {
+  //cursor:wait;
+  background-color:#E0E0FF
+}
+#logos {
+  position:absolute;
+  top: 30%;
+  left: 30%;
+  -ms-perspective: 804px;
+  -webkit-perspective: 804px;
+  -o-perspective: 804px;
+  perspective: 804px; 
+}
+
+#cube {
+  display: block;  position: relative;  margin: 30px auto;
+  height: 200px;  width: 200px;
+  -webkit-transform-style: preserve-3d;
+  -ms-transform-style: preserve-3d;
+  -o-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+
+}
+.c3d{
+  position:absolute;
+  backface_visibility: visible;
+  -webkit-backface-visibility: visible;
+  -ms-backface-visibility: visible;
+  -o-backface-visibility: visible;
+}
+#window{
+  width:50; height:50;
+  left:20%;
+  
+}
+#wall{
+  height: 1000px;  width: 1000px;
+  transform: rotateY(90deg) translate3d(0px,-1400px,-1400px) scale3d(2,2,2);
+  -webkit-transform: rotateY(90deg) translate3d(0px,-1400px,-1400px) scale3d(2,2,2);
+}#left{
+  height: 1000px;  width: 1000px;
+  transform: rotateY(90deg) translate3d(-2000px,-1400px,-1400px) scale3d(2,2,2);
+  -webkit-transform: rotateY(90deg) translate3d(-2000px,-1400px,-1400px) scale3d(2,2,2);
+  background-color:white;
+}
+#text{
+  height: 400px;  width: 400px;
+  transform: translate3d(-100px,-1100px,-1000px) scale3d(5,5,5);
+  -webkit-transform: translate3d(-100px,-1100px,-1000px) scale3d(5,5,5);
+  background-color:#00FFFF;
+}
+#floor{
+  height: 200px;  width: 200px;
+  //background: url('http://images2.layoutsparks.com/1/87625/ball-chain-brick-wall.gif');
+  -webkit-transform: rotateX(-90deg) scale3d(10,10,10);
+  transform: rotateX(-90deg) scale3d(10,10,10);
+ }
+#ceiling{
+  height: 1000px;  width: 1000px;
+  //background: url('http://images2.layoutsparks.com/1/87625/ball-chain-brick-wall.gif');
+  -webkit-transform: rotateX(-90deg) scale3d(2,2,2) translate3d(-200px,0px,-1200px);
+  transform: rotateX(-90deg) scale3d(2,2,2) translate3d(-200px,0px,-1200px);
+  background-color:#EEFFEE;
+ }
+#front {
+  height: 200px;  width: 200px;
+  transform: translate3d(1000px,-1000px,0) rotateY(90deg) scale3D(10,10,10);
+  -webkit-transform: translate3d(1000px,-1000px,0) rotateY(90deg) scale3D(10,10,10);
+}
+#back {
+  position: absolute;  height: 200px;  width: 200px;
+  transform: rotateY(180deg) translateZ(100px);
+}
+/*#overlap{
+
+z-index:9999;
+}
+#button{
+position:absolute;
+left:0px;
+top:0px;
+
+}*/
+</style>
+<!--script src="jquery.js"></script-->
+<script>
+onload = function (){
+	//alert(document.getElementById("cube").style.cssText);
+	//syncTransform("c3d");
+	var degtorad=Math.PI/180;
+	var pitch=1, yaw=1, x=0, y=100, z=0;
+	var Mx=0, My=0, P0=0, Y0=0;
+//	var view = new ViewPoint;
+	var cube = document.$id("cube").style;
+	var mouselock=0;
+	document.onmousemove=function(e){
+		if (mouselock){
+			pitch=P0+(e.screenY-My)/4;
+			yaw=Y0+(e.screenX-Mx)/4;
+			transform(x,y,z,yaw,pitch,0);
+		}
+	}
+	//document.onmousemove()
+	//mouselock=0
+	function transform(x,y,z,yaw,pitch,roll){
+		var transform=" rotateX("+pitch+"deg) rotateY("+-yaw+"deg) translate3d("+x+"px,"+y+"px,"+(z)+"px)";
+		cube.transform=transform;
+		cube.webkitTransform=transform;
+		cube.OTransform=transform;
+		cube.msTransform=transform;
+	}
+
+	document.onmousedown=function(e){
+		mouselock=1;
+		Mx=e.screenX;
+		My=e.screenY;
+		P0=pitch;
+		Y0=yaw;
+//		alert(""+Mx+"     "+My);
+	};
+
+	document.onmouseup=function(){
+		mouselock=0;
+	};
+	document.onmouseleave=function(){
+		document.onmouseup();
+	};
+	document.onkeypress=function(e){
+		var c=e.which
+		var a=String.fromCharCode(c);
+		var b=50;
+		var d=10;
+		z+=b*(((a=="w")-(a=="s"))*Math.cos(yaw*degtorad)-((a=="q")-(a=="e"))*Math.sin(yaw*degtorad));
+		x+=b*(((a=="w")-(a=="s"))*Math.sin(yaw*degtorad)+((a=="q")-(a=="e"))*Math.cos(yaw*degtorad));
+		y+=b*((c==32)-((c==16)+(c==92)+(c==122)));
+		yaw+=d*((a=="a")-(a=="d"));
+		//alert(c)
+		transform(x,y,z,yaw,pitch,0);
+		//lol.z+=b*((a=="r")-(a=="f"));
+		
+		//var transform="translateX("+lol.x+"px) translateY("+lol.y+"px) translateZ("+lol.z+"px) ";//rotateY("+-yaw/10+"deg) rotateX("+pitch/10+"deg) ";
+		//cube.transform=transform;
+		//cube.webkitTransform=transform;
+	};
+	function setIframes(){
+		var a=document.getElementsByTagName("iframe"); var b=a.length;
+		for (var i=0;i<b;i++)
+			//alert(a[i].contentWindow)
+			var c=a[i].contentWindow
+			c.onmouseover=document.onmouseover;
+			c.onmouseup=document.onmouseup;
+	}
+	//setIframes();
+	
+	transform(x,y,z,yaw,pitch,0);
+};
+
+function syncTransform(clas){
+	var a=document.$class(clas);
+	for (var i=0;i<a.length;i++){
+		var b=a[i].style;
+		alert(b.cssText)
+		b.webkitTransform=b.transform;
+		b.OTransform=b.transform;
+	}
+}
+
+{
+	function $Set(x){
+		x.$id=function(name){var a = this.getElementById(name); $Set(x); return a;}
+		x.$tag=function(name,x){var a=this.getElementsByTagName(name); if (x==undefined){return a;}else{var b = a[x]; $Set(x);return b;}}
+		x.$class=function(name,x){var a=this.getElementsByClassName(name); if (x==undefined){return a;}else{var b = a[x]; $Set(x);return b}}
+	}
+	$Set(document);
+}
+
+function frameCeption(element){
+element.innerHTML="<iframe src='css3d_test.html' width=1000 height=1000></iframe>"
+}
+</script>
+</head>
+<body><!--style="border: 1px solid black;"><!---->
+<p id="test"></p>
+<!--button class="overlap button"></button-->
+<div id="logos">
+  <div id="cube" >
+    <img src="http://thewebrocks.com/demos/3D-css-tester/mdnface.png"  id="front" alt="MDN" class="c3d"></img>
+    <img src="http://thewebrocks.com/demos/3D-css-tester/htmlface.png" id="back" alt="HTML5" class="c3d"></img>
+	<!--div class="wall"></div><!-->
+	<img src="http://images2.layoutsparks.com/1/87625/ball-chain-brick-wall.gif" id="floor" class="c3d"></img>
+	<iframe src="http://w3schools.com/" id="wall" class="c3d" onmouseover="document.onmouseup()"></iframe>
+	<iframe src="http://troido.nl/bejeweld/bejeweld.html" id="ceiling" onmouseover="document.onmouseup()" class="c3d"></iframe>
+	<div id="text" class="c3d">Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!  Hello world!<br /><br />This is a wall :D<br /><br /><span id="window" class="c3d">[Window]</span></div>
+	<div onclick="frameCeption(this)" id="left" class="c3d">Click for frameception!</div>
+  </div>
+</div>
+</body>
+</html>

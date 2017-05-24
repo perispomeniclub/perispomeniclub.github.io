@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<script src="parser.js"></script>
+		<script>
+
+
+
+
+var parse=new Parser({
+	parse:function(data){
+		var a=this.request("sum",true,data);
+		return a;
+	},
+	sum:function(data){
+		var a=this.request("mult",true,data);
+		var b=this.baseChar("+-",false,data);
+		if (b){
+			var c=this.request("sum",true,data);
+			a+=(b=="+")?c:-c;
+		}
+		return a;
+	},
+	mult:function(data){
+		var a=this.request("pow",true,data);
+		var b=this.baseChar("*/",false,data);
+		if (b){
+			var c=this.request("mult",true,data);
+			a=(b=="*")?a*c:a/c
+		}
+		return a;
+	},
+	pow:function(data){
+		var a=this.request("val",true,data);
+		var b=this.baseChar("^",false,data);
+		if (b){
+			var c=this.request("val",true,data);
+			a=Math.pow(a,c);
+		}
+		return a;
+	},
+	val:function(data){
+		var a=this.request("numb",false,data)||
+			this.request("const",false,data)||
+			this.request("brackets",true,data);
+		return a;
+	},
+	numb:function(data){
+		var a=this.baseChars("0123456789",true,data);
+		if (this.baseChar(".,",false,data))
+			a=a.concat(".",this.baseChars("0123456789",true,data));
+		var b=Number(a);
+		b.string=a;
+		return b;
+	},
+	const:function(data){
+		var a=this.baseSub(["e","pi"],true,data);
+		return (a=="e"&&Math.E)||(a=="pi"&&Math.PI);
+	},
+	brackets:function(data){
+		if (!this.baseChar("(",true,data))		// the if and the return could be left away because when a required function fails, no function after this will actually work
+			return false;
+		var a=this.request("sum",true,data);
+		this.baseChar(")",true,data);
+		return a;
+		
+	}
+},{skip:" \n	"});
+
+function parseText(text){
+	console.log(parse.parse(text));
+}
+
+
+		</script>
+	</head>
+	<body>
+		<textarea id="input">
+2*3+4*(pi+6)
+		</textarea>
+		<button onclick="parseText(this.previousElementSibling.value)">Parse</button>
+	</body>
+</html>

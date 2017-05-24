@@ -1,0 +1,134 @@
+{
+	"scale": 20,
+	"sprites":{
+		"template": {
+			"image":"textures.png",
+			"sx": 17,
+			"sy": 0,
+			"swidth": 8,
+			"sheight": 8,
+			"cx":4,
+			"cy":4
+		},
+		"player": {
+			"image":"textures.png",
+			"sx": 0,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "O"
+		},
+		"end":{
+			"image":"textures.png",
+			"sx": 20,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "X"
+		},
+		"block": {
+			"image":"textures.png",
+			"sx": 60,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "█"
+		},
+		"cornerTL": {
+			"image":"textures.png",
+			"sx": 120,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◢"
+		},
+		"cornerTR": {
+			"image":"textures.png",
+			"sx": 140,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◣"
+		},
+		"cornerBR": {
+			"image":"textures.png",
+			"sx": 80,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◤"
+		},
+		"cornerBL": {
+			"image":"textures.png",
+			"sx": 100,
+			"sy": 0,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◥"
+		},
+		"teleM": {
+			"image":"textures.png",
+			"sx": 0,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◉"
+		},
+		"teleC": {
+			"image":"textures.png",
+			"sx": 20,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "◎"
+		},
+		"teleB": {
+			"image":"textures.png",
+			"sx": 140,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "☉"
+		},
+		"stopper": {
+			"image":"textures.png",
+			"sx": 40,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "╬"
+		},
+		"clickerH": {
+			"image":"textures.png",
+			"sx": 60,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "┅"
+		},
+		"clickerV": {
+			"image":"textures.png",
+			"sx": 80,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "┇"
+		},
+		"visited1": {
+			"image":"textures.png",
+			"sx": 100,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "·"
+		},
+		"visited2": {
+			"image":"textures.png",
+			"sx": 120,
+			"sy": 20,
+			"swidth": 20,
+			"sheight": 20,
+			"char": "·"
+		}
+	}
+}

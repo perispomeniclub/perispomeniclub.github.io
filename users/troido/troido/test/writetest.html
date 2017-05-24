@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.2.min.js"> </script>
+<script>
+function writeData(data){
+	$.post("data.php",{val:data},function(response){console.log(response);});
+}
+</script>
+</head>
+<body>
+</body>
+</html>

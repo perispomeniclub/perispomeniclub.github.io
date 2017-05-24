@@ -1,0 +1,88 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script src="engine.js"></script> <!-- it is important that the engine.js script is loaded firs, then the extensions, and then your game code  -->
+<script src="engine_keys.js"></script>
+<script>
+var game= new Game({
+	resources:{
+		sprites:[
+			{ // later on, more properties will be added, for example to take only a part of the image, or to scale it
+				name:"spr_smiley",
+				src:"http://w3schools.com/html/smiley.gif", 
+			},
+			{
+				name:"spr_monster",
+				src:"http://icons.iconarchive.com/icons/spoon-graphics/monster/256/Blue-Monster-icon.png",
+			},
+		],
+		backgrounds:[ //backgrounds don't work yet. This will be added later
+			{
+				name:"bg_wall",
+				src:"http://images2.layoutsparks.com/1/87625/ball-chain-brick-wall.gif"
+			},
+		],
+		objects:[
+			{	name:"player",
+				spriteName:"spr_smiley",
+				events:{
+					create:function(){alert("hello, i am the player instance")},
+					keypress_68:function(){		// these events oly work when you have added the engine_keys.js extension
+						this.x+=5;				// you can find the keycodes on http://troido.nl/achtung.htm
+					}, 							// when you press a key, you see the code right of the game
+					keyrelease_65:function(){
+						this.x-=5;
+					}, 
+					keydown_83:function(){
+						this.y+=5;
+					},
+					keydown_87:function(){
+						this.y-=5;
+					},
+					step:function(){
+					this.x+=keys.down[39]-keys.down[37];
+					this.y+=keys.down[40]-keys.down[38];
+					}, // draw functions should also be in the step event.
+					 // you can acces the draw context as ctx
+				},
+			},
+			{
+				name:"enemy",
+				spriteName:"spr_monster",
+				events:{
+					create:function(){alert("rawr, i am a monster")},
+				},
+			},
+		],
+		rooms:[
+			{	name:"room0",
+				settings:{width:1200,height:720,speed:30},
+				creationCode: function(){
+					this.instanceCreate(player,100,100);
+					this.instanceCreate(enemy,100,300);
+					this.instanceCreate(enemy,300,300);
+					this.instanceCreate(enemy,300,100);
+				},
+				backgrounds:{background:"bg_wall",backgroundColor:"#C0C0C0"},// only backgroundColor really does something now
+			},
+		],
+	},
+	canvasId:"canvas",// this should be the id of the canvas element that will be used for drawing
+	playDiv:"game",// this should be the id of an empty and invisible div element that will be used for e.g. loading the images
+})
+
+</script>
+</head>
+<body>
+<canvas id="canvas" style="border:1px solid black"></canvas>
+<div id="game" style="display:none"></div>
+</body>
+</html>
+<!--
+possible events:
+create
+
+
+
+
+--!>

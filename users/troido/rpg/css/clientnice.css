@@ -1,0 +1,79 @@
+.resources {
+    display: none;
+    border: 1px solid red;
+}
+.gameview {
+    border: 2px solid black;
+    float: left;
+    width: 480px;
+    height: 480px;
+    margin: 2px;
+}
+/*.side {
+    float: left;
+}*/
+.connectarea{
+    width: 360px;
+/*     float: left; */
+/*     clear: left; */
+}
+.connectform {
+    display: none;
+}
+textarea {
+    resize: none;
+}
+.touchcontrols {
+    width: 330px;
+    height: 220px;
+/*     float: left; */
+}
+.touchbutton {
+    width: 100px;
+    height: 100px;
+    border: 2px solid black;
+    float: left;
+    margin: 1px;
+    text-align: center;
+}
+.buttonline {
+    clear: both;
+}
+.interactbuttons {
+    width: 240px;
+    height: 200px;
+    overflow-y: scroll;
+}
+.interaction {
+    border: 2px solid black;
+    margin: 1px;
+    width: 95%;
+    height: 30px;
+}
+.optionareas {
+    border: 1px solid black;
+    margin: 3px;
+    clear: right;
+    float: left;
+/*     clear: left; */
+}
+
+.dialogarea {
+    width: 400px;
+    height: 200px;
+    text-align: center;
+}
+
+.dialogspeaker {
+    padding: 10px;
+}
+.dialogtext {
+    height: 100px;
+}
+
+
+
+.placefiller {
+    visibility: hidden;
+}
+

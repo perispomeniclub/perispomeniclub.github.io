@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<script src="../jslibs/function grid.js"></script>
+		<script src="../jslibs/inheritance.js"></script>
+		<script src="../jslibs/keys.js"></script>
+		<script>
+//
+
+function Drawing(canvas){
+	this.canvas=canvas;
+	this.ctx=canvas.getContext("2d");
+	this.width=canvas.width;
+	this.height=canvas.height;
+	this.view={
+		x:0,
+		y:0,
+		w:this.width,
+		h:this.height,
+		cx:this.width/2,
+		cy:this.height/2,
+		zoom:1,
+		follows:undefined
+	};
+	
+	this.setSize=function(width,height){
+		this.width=width;
+		this.canvas.width=width;
+		this.height=height;
+		this.canvas.height=height;
+	};
+	this.fillCircle=function(x,y,r,color){
+		this.ctx.fillStyle=color;
+		this.ctx.beginPath();
+		this.ctx.arc(x,y,r,0,2*Math.PI);
+		this.ctx.fill();
+	};
+	this.strokeCircle=function(x,y,r,color){
+		this.ctx.strokeStyle=color;
+		this.ctx.beginPath();
+		this.ctx.arc(x,y,r,0,2*Math.PI);
+		this.ctx.stroke();
+	};
+	this.copy=function(){
+		return this.ctx.getImageData(0,0,this.width,this.height);
+	};
+	this.paste=function(data){
+		this.ctx.putImageData(data,0,0);
+	};
+	this.outOfRange=function(x,y){
+		return (x<0||x>=this.width||y<0||y>=this.height);
+	}
+	this.getPixel=function(x,y){
+		if (this.outOfRange(x,y)){
+			x<0&&(x=0);
+			x>=this.width&&(x=this.width);
+			y<0&&(y=0);
+			y>=this.height&&(y=this.height);
+		}
+		var imageData=this.ctx.getImageData(x,y,1,1).data;
+		return imageData[0]+imageData[1]*256+imageData[2]*65536;
+	};
+	this.clear=function(){
+		this.ctx.fillStyle="rgba(0,0,0,0)";
+		this.ctx.globalCompositeOperation="copy";
+		this.ctx.fillRect(0,0,1,1);
+		this.ctx.globalCompositeOperation="source-over";
+	};
+	this.fill=function(style){
+		this.ctx.fillStyle=style;
+		this.ctx.fillRect(0,0,this.width,this.height);
+	};
+	this.drawSprite=function(spr,x,y){
+		this.ctx.drawImage(spr.img,spr.sx,spr.sy,spr.swidth,spr.sheight,x-spr.cx,y-spr.cy,spr.width,spr.height);
+	};
+	this.applyView=function(dist){
+		//console.log(this.view.zoom,0,0,this.view.zoom,-Math.floor(this.view.cx/dist-this.view.w/2),-Math.floor(this.view.cy/dist-this.view.h/2));
+		/* I've been fithting the 'white line problem' in firefox for so long, and this Math.floor just solved it. Awesome
+		 * Maybe I could even use bitwise or to cast it to an int */
+		this.ctx.setTransform(this.view.zoom,0,0,this.view.zoom,-Math.floor(this.view.cx/dist-this.view.w/2),-Math.floor(this.view.cy/dist-this.view.h/2));
+	};
+	this.startDraw=function(){
+		this.clear();
+		
+	}
+	this.setViewCenter=function(x,y){
+		this.view.x=x-this.view.w/2;
+		this.view.y=y-this.view.h/2;
+		this.view.cx=x;
+		this.view.cy=y;
+		//this.ctx.setTransform(1,0,0,1,-this.view.x,-this.view.y);
+	};
+	this.getViewCenterX=function(x,y){
+		return this.view.x+this.view.w/2;
+	}
+	this.getViewCenterY=function(x,y){
+		return this.view.y+this.view.h/2;
+	}
+	this.setViewSize=function(w,h){
+		this.view.w=w;
+		this.view.h=h;
+	}
+	this.viewFollow=function(obj){
+		this.view.follows=obj;
+	}
+}
+
+
+
+function Sprite(img,sx,sy,swidth,sheight,cx,cy,width,height){
+	this.img=img;
+	this.sx=sx||0;
+	this.sy=sy||0;
+	this.swidth=swidth||img.width-this.sx;
+	this.sheight=sheight||img.height-this.sy;
+	this.cx=cx||0;
+	this.cy=cy||0;
+	this.width=width||this.swidth;
+	this.height=height||this.sheight;
+}
+
+
+function TexturesLoader(spriteData){
+	this.images={};
+	this.sprites={};
+	for (var i in spriteData){
+		var a=spriteData[i];
+		if (!this.images[a.image]){
+			var b=new Image();
+			b.src=a.image;
+			this.images[a.image]=b;
+		}else
+			b=this.images[a.image];
+		var spr=new Sprite(b,a.sx,a.sy,a.swidth,a.sheight,a.cx,a.cy,a.width,a.height);
+		spr.name=i;
+		this.sprites[i]=spr;
+	}
+	
+}
+
+function DrawLayer(depth,scale,drawLevels){
+	this.depth=depth;
+	this.scl=scale;
+	this.drawLevels=drawLevels;
+	var events=[];
+	for (var i=0;i<drawLevels;i++)
+		events[i]="draw"+i;
+	this.events=new EventRoom(events)
+	
+	this.draw=function(drawing){
+		drawing.applyView(this.depth);
+		var box={
+			drawing:drawing,
+			scl:this.scl,
+			l:(drawing.view.cx/this.depth-drawing.view.w/2)/this.scl,
+			t:(drawing.view.cy/this.depth-drawing.view.h/2)/this.scl,
+			r:(drawing.view.cx/this.depth+drawing.view.w/2)/this.scl+1,
+			b:(drawing.view.cy/this.depth+drawing.view.h/2)/this.scl+1,
+			cx:drawing.view.cx/(this.depth*this.scl),
+			cy:drawing.view.cy/(this.depth*this.scl),
+			inView:function(x,y){
+				return (x>=this.l&&y>=this.t&&x<this.r&&y<this.b);
+			},
+			drawSprite:function(sprite,x,y){
+				this.drawing.drawSprite(sprite,x*this.scl,y*this.scl);
+			}
+		};
+		
+		if (this.field){
+			var objs=this.field.get(box.l,box.t,box.r,box.b);
+			for (var i=0;i<this.drawLevels;i++){
+				var name="ev_draw"+i;
+				for (var j=0;j<objs.length;j++){
+					if (objs[j][name]){
+						objs[j][name](box);
+					}
+				}
+			}
+		}else {
+			for (var i=0;i<this.drawLevels;i++){
+				this.events.dispatch("draw"+i,box);
+			}
+		}
+	};
+	this.addObj=function(obj){
+		this.events.addObj(obj);
+	};
+}
+
+function EventRoom(events,prefix){
+	this.events=events;
+	this.target=document.createElement("element");
+	this.prefix=(prefix!==undefined)?prefix:"ev_";
+	//this.functions=[]
+	
+	this.addObj=function(obj){
+		for (var i=0;i<this.events.length;i++){
+			var e=this.prefix+this.events[i];
+			if (obj[e]){
+				(function(element,prop,caller){
+					var fn=function(event){obj[prop](event.detail,caller,event);};
+					obj[prop].event=fn;
+					element.addEventListener(e,fn);
+				})(this.target,e,this);
+			}
+		}
+	};
+	this.removeObj=function(obj){
+		for (var i=0;i<this.events.length;i++){
+			var e=this.prefix+this.events[i];
+			if (obj[e]){
+				this.target.removeEventListener(e,obj[e].event);
+			}
+		}
+	};
+	this.dispatch=function(name,data){
+		var ev=new CustomEvent(this.prefix+name,{detail:data});
+		this.target.dispatchEvent(ev);
+	};
+}
+
+function CollisionField(width,height){
+	this.field=[];
+	for (var x=0;x<width;x++){
+		this.field[x]=[];
+		for (var y=0;y<height;y++){
+			this.field[x][y]=[];
+		}
+	}
+	this.width=width;
+	this.height=height;
+	this.resize=function(width,height){
+		if (width>this.width){
+			for (var x=this.width;x<width;x++){
+				this.field[x]=[];
+				if (height>this.height){
+					for (var y=this.height;y<height;y++){
+						this.field[x][y]=[];
+					}
+				}
+			}
+		}
+		this.width=width;
+		this.height=height;
+	};
+	this.set=function(obj,x1,y1,x2,y2){
+		for(var x=Math.max(0,Math.floor(x1));x<Math.min(this.width,Math.ceil(x2));x++){
+			for(var y=Math.max(0,Math.floor(y1));y<Math.min(this.height,Math.ceil(y2));y++){
+				var list=this.field[x][y];
+				var occurs=0;
+				for (var i=0;i<list.length;i++){
+					if (list[i]===obj){
+						occurs=1;
+					}
+				}
+				if (!occurs)
+					list.push(obj);
+			}
+		}
+	};
+	this.remove=function(obj,x1,y1,x2,y2){
+		for(var x=Math.max(0,Math.floor(x1));x<Math.min(this.width,Math.ceil(x2));x++){
+			for(var y=Math.max(0,Math.floor(y1));y<Math.min(this.height,Math.ceil(y2));y++){
+				var list=this.field[x][y];
+				for (var i=0;list&&i<list.length;i++){
+					if (list[i]===obj){
+						list.splice(i,1);
+					}
+				}
+			}
+		}
+	};
+	this.get=function(x1,y1,x2,y2){
+		var objects=[];
+		for(var x=Math.max(0,Math.floor(x1));x<Math.min(this.width,Math.ceil(x2));x++){
+			for(var y=Math.max(0,Math.floor(y1));y<Math.min(this.height,Math.ceil(y2));y++){
+				objects=objects.concat(this.field[x][y]);
+			}
+		}
+		var i=0;
+		while (i<objects.length){	// a while loop because objects.length is probably decreasing
+			for (var j=0;j<i;j++){
+				if (objects[i]===objects[j]){
+					objects.splice(i,1);
+					break;
+				}
+			}
+			if (j>=i)
+				i++;
+		}
+		return objects;
+	};
+}
+
+
+
+var Controller=Class.extend({
+	x:0,
+	y:0,
+	update:function(){
+		this.x=this.obj.x;
+		this.y=this.obj.y;
+	},
+	setObject:function(obj){
+		this.obj.controller=undefined;
+		this.obj=obj;
+		obj.controller=this;
+	},
+	init:function(obj){
+		if (obj)
+			this.obj=obj;
+	}
+});
+
+var ControllerKeys=Controller.extend({
+	ev_plan:function(keys){
+		this.left=keys.get(65)||keys.get(37);
+		this.right=keys.get(68)||keys.get(39);
+		this.jump=keys.getPress(87)||keys.getPress(38);
+		this.up=keys.get(87)||keys.get(38);
+		this.fly=keys.getPress(32);
+		this.shift=keys.getPress(90);
+		if (this.shift&&this.obj.collisions.length)
+			for (var i=0;i<this.obj.collisions.length;i++){
+				if (this.obj.collisions[i] instanceof Creature){
+					this.setObject(this.obj.collisions[i]);
+					break;
+				}
+			};
+	},
+	ev_draw_10:function(drawing){
+		this.update();
+		drawing.setViewCenter((this.x+0.5)*31,(this.y+0.5)*31);
+	}
+});
+
+
+var Inventory=Class.extend({
+	put:function(item){
+		for (var i=0;i<this.size;i++){
+			if (!this.slots[i]){
+				this.slots[i]=item;
+				return true;
+			}
+		}
+		return false;
+	},
+	remove:function(slot){
+		if (this.slots[slot]){
+			var a=this.slots[slot];
+			this.slots[slot]=undefined;
+			return a;
+		}
+		return false;
+	},
+	get:function(slot){
+		return this.slots[slot];
+	},
+	init:function(size){
+		this.size=size;
+		this.slots=[];
+	}
+})
+
+
+var Background=Class.extend({
+	width:0,
+	height:0,
+	drawOffset:1,
+	getVal:function(x,y){return this.grid.get(x,y);},
+	getSpr:function(x,y){return this.sprites[this.grid.get(x,y)];},
+	ev_draw0:function(data){
+		var w=Math.floor(Math.min(data.r+this.drawOffset,this.width));
+		var h=Math.floor(Math.min(data.b+this.drawOffset,this.height));
+		for (var y=Math.floor(Math.max(data.t-this.drawOffset,0));y<h;y++){
+			for (var x=Math.floor(Math.max(data.l-this.drawOffset,0));x<w;x++){
+				if (this.getSpr(x,y)){
+					data.drawing.drawSprite(this.getSpr(x,y),x*data.scl,y*data.scl);
+				}
+			}
+		}
+	},
+	init:function(fileName,data){
+		this.sprites=[];
+		for (x in data){
+			this.sprites[x]=data[x];
+		}
+		this.grid=new Grid();
+		var bg=this;
+		this.grid.fromImageFile(fileName,function(grid){
+			bg.width=grid.width;
+			bg.height=grid.height;
+		});
+		
+	}
+});
+
+function Loader(jsonFileName,events,callBack){
+	this.layers=[];
+	this.collisions=[];
+	this.sprites={};
+	this.events=events;
+	this.callBack=callBack;
+	this.loaded=0;
+	this.finished=false;
+	this.toLoad=0;
+
+	this.isLoaded=function(){
+		if (this.loaded>=this.toLoad&&!this.finished){
+			this.finished=true;
+			this.callBack(this.layers,this.collisions,this.sprites);
+		}
+	}
+	this.loadObjMap=function(blocks,layer,grid){//console.log(grid.to2D());
+		layer.width=grid.width;
+		layer.height=grid.height;
+		var collision=new CollisionField(grid.width,grid.height);
+		//var colEvent=new EventRoom(["startCollisions","getStartCollisions","setCollisions","getCollisions"]);
+		this.collisions.push(collision);
+		layer.field=collision;
+		var progress=0;
+		loader=this;
+		grid.for(function(x,y,val){
+			if (y/layer.height*20>=progress){
+				console.log("loading: "+(5*progress)+" %");
+				//alert("loading: "+(5*progress)+" %");
+				progress++;
+			}
+			var type=blocks[val];
+			if (type){
+				for (var i=0;i<type.length;i++){
+					var obj=new window[type[i]](x,y,collision);
+					obj.setSprite(loader.sprites);
+					loader.events.addObj(obj);
+					//collision.addObj(obj);
+					//colEvent.addObj(obj);
+				}
+			}
+		});
+		if (layer.data.objects){
+			var objects=layer.data.objects;
+			for (var name in objects){
+				for (var i=0;i<objects[name].length;i++){
+					var obj=new window[name](objects[name][i].x,objects[name][i].y,collision);
+					obj.setSprite(this.sprites);
+					this.events.addObj(obj);
+					//collision.addObj(obj);
+					//colEvent.addObj(obj);
+					if (objects[name][i].controller){
+						obj.controller=new window[objects[name][i].controller](obj);
+						this.events.addObj(obj.controller);
+					}
+				}
+			}
+		}
+		//this.events.dispatch("startCollisions");
+		//this.events.dispatch("getStartCollisions");
+
+		this.loaded++;
+		this.isLoaded();
+	};
+	this.loadLayer=function(layerData){
+		var l=new DrawLayer(layerData.depth,layerData.scale,layerData.levels||1);
+		this.layers.push(l);
+		l.data=layerData;
+		if (layerData.type=="static"){
+			var imgs=[];
+			for (var x in layerData.sprites){
+				imgs[Number(x)]=this.sprites[layerData.sprites[x]];
+			}
+			l.addObj(new Background(layerData.map,imgs));
+			this.loaded++;
+			this.isLoaded();
+		} else {
+			var grid=new Grid();
+			var blocks=[];
+			for (var x in layerData.blocks){
+				blocks[Number(x)]=layerData.blocks[x];
+			}
+			var self=this;
+			grid.fromImageFile(layerData.map,function(){self.loadObjMap(blocks,l,grid);})
+		}
+
+	}
+	this.gameStart=function(data){
+		if (data||!data.textures||!data.layers){
+			new Error("Error, could not load the game correctly");
+		}
+		this.data=data;
+		
+		this.textures=new TexturesLoader(JSON.parse(loadSync(data.textures)));
+		this.sprites=this.textures.sprites;
+		this.toLoad=data.layers.length;
+		for (var i=0;i<data.layers.length;i++){
+			this.loadLayer(data.layers[i]);
+		}
+	};
+	var loader=this;
+	loadAJAX(jsonFileName,function(string){loader.gameStart(JSON.parse(string));});
+
+}
+
+function update(gameData){
+	gameData.events.dispatch("setCollisions");
+	gameData.events.dispatch("getCollisions");
+	gameData.events.dispatch("plan",Keys);
+	Keys.clear();
+	gameData.events.dispatch("prestep");
+	gameData.events.dispatch("step");
+	gameData.events.dispatch("poststep");
+	gameData.drawing.startDraw();
+	for (var i=19;i>0;i--)
+		gameData.events.dispatch("draw_"+i,gameData.drawing);
+	gameData.events.dispatch("draw",gameData.drawing);
+	for (var i=0;i<gameData.layers.length;i++)
+		gameData.layers[i].draw(gameData.drawing);	
+};
+
+function main(){
+
+
+
+	var output=new Drawing(document.getElementById("canvas"));
+	output.setSize(960,640);
+	output.setViewSize(960,640);
+
+	
+
+	var events=["plan","prestep","step","draw","test","draw_background","startCollisions","getStartCollisions","setCollisions","getCollisions"];
+	for (var i=1;i<20;i++){
+		events.push("draw_"+i);
+	};
+	var time=new EventRoom(events);
+
+	new Loader("blocks.json",time,function(layers,collisions,sprites){
+		var game={drawing:output,events:time,layers:layers,collisions:collisions};
+		time.dispatch("startCollisions",collisions);
+		time.dispatch("getStartCollisions",collisions);
+		//console.log(time);
+		game.step=setInterval(update,30,game);
+	});
+	
+}
+
+
+
+window.addEventListener("load",main);
+
+
+
+
+
+function loadAJAX(url,ready){
+	var xmlhttp=new XMLHttpRequest();
+	xmlhttp.onload=function(){
+		ready(xmlhttp.responseText);
+	}
+	xmlhttp.open("GET",url,true);
+	xmlhttp.send();
+}
+
+function loadSync(url){
+	var xmlhttp=new XMLHttpRequest();
+	xmlhttp.open("GET",url,false);
+	xmlhttp.send();
+	return xmlhttp.responseText;
+}
+		</script>
+		<script src="blocks.js"></script>
+	</head>
+	<body>
+		<canvas id="canvas" style="outline:3px solid black;">
+		</canvas>
+	</body>
+</html>
